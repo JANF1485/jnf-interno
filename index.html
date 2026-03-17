@@ -18,7 +18,16 @@ window._fb={auth,db,signInWithEmailAndPassword,signOut,onAuthStateChanged,sendPa
 onAuthStateChanged(auth,async user=>{
   if(user){
     try{
-      const snap=await getDoc(doc(db,'usuarios_interno',user.uid));
+      let snap=await getDoc(doc(db,'usuarios_interno',user.uid));
+      if(!snap.exists()){
+        // Intentar migrar desde colección antigua 'usuarios'
+        const snapOld=await getDoc(doc(db,'usuarios',user.uid));
+        if(snapOld.exists()){
+          const data=snapOld.data();
+          await setDoc(doc(db,'usuarios_interno',user.uid),data);
+          snap=await getDoc(doc(db,'usuarios_interno',user.uid));
+        }
+      }
       const perfil=snap.exists()?snap.data():{email:user.email,rol:'usuario',nombre:user.email,modulos:['trabajos','egresos','financiero']};
       window._currentUser=user;
       window._perfil=perfil;
@@ -51,8 +60,9 @@ body{font-family:'Montserrat',sans-serif;background:var(--bg);color:var(--text);
 
 /* SPLASH */
 #screen-splash{display:flex;align-items:center;justify-content:center;min-height:100vh;background:var(--blue-dark);flex-direction:column;gap:24px;cursor:pointer;}
-.splash-logo{width:180px;height:180px;border-radius:50%;object-fit:cover;border:4px solid var(--gold);box-shadow:0 0 0 8px rgba(201,162,39,0.2),0 20px 60px rgba(0,0,0,0.4);transition:transform .3s;}
-#screen-splash:hover .splash-logo{transform:scale(1.04);}
+.splash-logo-wrap{position:relative;display:inline-block;border-radius:50%;}
+.splash-logo{width:180px;height:180px;border-radius:50%;object-fit:cover;border:4px solid var(--gold);box-shadow:0 0 0 8px rgba(201,162,39,0.2),0 20px 60px rgba(0,0,0,0.4);transition:transform .35s ease,box-shadow .35s ease,border-color .35s ease;}
+.splash-logo-wrap:hover .splash-logo{transform:scale(1.06);border-color:#ffe066;box-shadow:0 0 12px 4px rgba(255,215,0,0.9),0 0 30px 10px rgba(201,162,39,0.7),0 0 60px 20px rgba(201,162,39,0.4),0 0 90px 30px rgba(201,162,39,0.2),0 20px 60px rgba(0,0,0,0.5);}
 .splash-name{font-size:24px;font-weight:800;color:var(--gold);text-align:center;}
 .splash-sub{font-size:13px;color:var(--blue-mid);letter-spacing:1px;text-transform:uppercase;}
 .splash-pulse{width:10px;height:10px;border-radius:50%;background:var(--gold);animation:pulse 2s infinite;}
@@ -61,10 +71,10 @@ body{font-family:'Montserrat',sans-serif;background:var(--bg);color:var(--text);
 
 /* LOGIN */
 #screen-login{min-height:100vh;background:var(--blue-dark);}
-#screen-login.active{display:flex!important;align-items:center;justify-content:center;padding:60px 20px;}
-.login-box{background:#fff;border-radius:20px;padding:60px 40px 32px;width:100%;max-width:420px;box-shadow:0 20px 60px rgba(0,0,0,0.4);}
+#screen-login.active{display:flex!important;align-items:center;justify-content:center;padding:80px 20px;}
+.login-box{background:#fff;border-radius:20px;padding:75px 40px 32px;width:100%;max-width:420px;box-shadow:0 20px 60px rgba(0,0,0,0.4);}
 .login-logo-wrap{display:none;}
-.login-logo-float{width:90px;height:90px;border-radius:50%;object-fit:cover;border:3px solid var(--gold);box-shadow:0 4px 20px rgba(0,0,0,0.35);position:absolute;top:-45px;left:50%;transform:translateX(-50%);z-index:10;}
+.login-logo-float{width:130px;height:130px;border-radius:50%;object-fit:cover;border:4px solid var(--gold);box-shadow:0 4px 24px rgba(0,0,0,0.4);position:absolute;top:-65px;left:50%;transform:translateX(-50%);z-index:10;}
 .login-company{display:none;}
 .login-nit{display:none;}
 .login-title{font-size:18px;font-weight:700;color:var(--blue-dark);text-align:center;margin-bottom:4px;}
@@ -326,7 +336,7 @@ body{font-family:'Montserrat',sans-serif;background:var(--bg);color:var(--text);
 
 <!-- SPLASH -->
 <div id="screen-splash" class="screen active" onclick="splashEnter()">
-  <img class="splash-logo" id="splash-logo" src="" alt="JNF"/>
+  <div class="splash-logo-wrap"><img class="splash-logo" id="splash-logo" src="" alt="JNF"/></div>
   <div class="splash-name">Asesorías y Consultorías JNF S.A.S.</div>
   <div class="splash-sub">Sistema de Gestión Interna</div>
   <div class="splash-pulse"></div>
