@@ -18,7 +18,7 @@ window._fb={auth,db,signInWithEmailAndPassword,signOut,onAuthStateChanged,sendPa
 onAuthStateChanged(auth,async user=>{
   if(user){
     try{
-      const snap=await getDoc(doc(db,'usuarios',user.uid));
+      const snap=await getDoc(doc(db,'usuarios_interno',user.uid));
       const perfil=snap.exists()?snap.data():{email:user.email,rol:'usuario',nombre:user.email,modulos:['trabajos','egresos','financiero']};
       window._currentUser=user;
       window._perfil=perfil;
@@ -1415,7 +1415,7 @@ async function loadUsers(){
   const container=document.getElementById('users-list');
   container.innerHTML='<p style="color:var(--text3);font-size:13px;">Cargando usuarios...</p>';
   try{
-    const snap=await window._fb.getDocs(window._fb.collection(window._fb.db,'usuarios'));
+    const snap=await window._fb.getDocs(window._fb.collection(window._fb.db,'usuarios_interno'));
     if(snap.empty){container.innerHTML='<p style="color:var(--text3);font-size:13px;">No hay usuarios registrados aún.</p>';return;}
     const users=[];
     snap.forEach(d=>users.push({uid:d.id,...d.data()}));
@@ -1471,7 +1471,7 @@ async function createUser(){
   if(pwd.length<6){errEl.textContent='La contraseña debe tener al menos 6 caracteres.';return;}
   try{
     const cred=await window._fb.createUserWithEmailAndPassword(window._fb.auth,email,pwd);
-    await window._fb.setDoc(window._fb.doc(window._fb.db,'usuarios',cred.user.uid),{email,nombre,rol,modulos,createdAt:new Date().toISOString()});
+    await window._fb.setDoc(window._fb.doc(window._fb.db,'usuarios_interno',cred.user.uid),{email,nombre,rol,modulos,createdAt:new Date().toISOString()});
     sucEl.textContent='✓ Usuario "'+nombre+'" creado exitosamente.';
     setTimeout(()=>{closeUCreateModal();loadUsers();},1500);
   }catch(e){
@@ -1508,9 +1508,9 @@ async function saveUserEdit(){
   errEl.textContent='';sucEl.textContent='';
   if(!nombre){errEl.textContent='El nombre es obligatorio.';return;}
   try{
-    const snap=await window._fb.getDoc(window._fb.doc(window._fb.db,'usuarios',uid));
+    const snap=await window._fb.getDoc(window._fb.doc(window._fb.db,'usuarios_interno',uid));
     const existing=snap.exists()?snap.data():{};
-    await window._fb.setDoc(window._fb.doc(window._fb.db,'usuarios',uid),{...existing,nombre,rol,modulos});
+    await window._fb.setDoc(window._fb.doc(window._fb.db,'usuarios_interno',uid),{...existing,nombre,rol,modulos});
     sucEl.textContent='✓ Usuario actualizado.';
     setTimeout(()=>{closeUEditModal();loadUsers();},1200);
   }catch(e){errEl.textContent='Error: '+e.message;}
@@ -1530,7 +1530,7 @@ async function deleteUser(uid, nombre){
     const{signInWithEmailAndPassword}=window._fb;
     await signInWithEmailAndPassword(window._fb.auth, window._currentUser.email, pwd);
     // Delete from Firestore (cannot delete Auth user from client SDK without admin SDK)
-    await window._fb.deleteDoc(window._fb.doc(window._fb.db,'usuarios',uid));
+    await window._fb.deleteDoc(window._fb.doc(window._fb.db,'usuarios_interno',uid));
     alert('✓ Usuario "'+nombre+'" eliminado del sistema.\n(Para eliminar el acceso de login, hazlo desde Firebase Console → Authentication)');
     loadUsers();
   }catch(e){
