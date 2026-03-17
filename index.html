@@ -61,10 +61,12 @@ body{font-family:'Montserrat',sans-serif;background:var(--bg);color:var(--text);
 
 /* LOGIN */
 #screen-login{min-height:100vh;background:var(--blue-dark);}
-#screen-login.active{display:flex!important;align-items:center;justify-content:center;}
-.login-box{background:#fff;border-radius:20px;padding:40px;width:100%;max-width:400px;box-shadow:0 20px 60px rgba(0,0,0,0.3);}
-.login-logo-wrap{text-align:center;margin-bottom:24px;}
-.login-logo{width:80px;height:80px;border-radius:50%;object-fit:cover;border:3px solid var(--gold);}
+#screen-login.active{display:flex!important;align-items:center;justify-content:center;padding:60px 20px;}
+.login-box{background:#fff;border-radius:20px;padding:60px 40px 32px;width:100%;max-width:420px;box-shadow:0 20px 60px rgba(0,0,0,0.4);}
+.login-logo-wrap{display:none;}
+.login-logo-float{width:90px;height:90px;border-radius:50%;object-fit:cover;border:3px solid var(--gold);box-shadow:0 4px 20px rgba(0,0,0,0.35);position:absolute;top:-45px;left:50%;transform:translateX(-50%);z-index:10;}
+.login-company{display:none;}
+.login-nit{display:none;}
 .login-title{font-size:18px;font-weight:700;color:var(--blue-dark);text-align:center;margin-bottom:4px;}
 .login-sub{font-size:12px;color:var(--text3);text-align:center;margin-bottom:24px;}
 .login-field{margin-bottom:14px;}
@@ -333,16 +335,18 @@ body{font-family:'Montserrat',sans-serif;background:var(--bg);color:var(--text);
 
 <!-- LOGIN -->
 <div id="screen-login" class="screen">
-  <div class="login-box">
-    <div class="login-logo-wrap"><img class="login-logo" id="login-logo" src="" alt="JNF"/></div>
-    <div class="login-title">Sistema de Gestión Interna</div>
-    <div class="login-sub">Asesorías y Consultorías JNF S.A.S.</div>
-    <div class="login-field"><label>Correo electrónico</label><input type="email" id="login-email" placeholder="correo@ejemplo.com" onkeydown="if(event.key==='Enter')doLogin()"/></div>
-    <div class="login-field"><label>Contraseña</label><input type="password" id="login-pwd" placeholder="••••••••" onkeydown="if(event.key==='Enter')doLogin()"/></div>
-    <button class="btn-login" id="btn-login" onclick="doLogin()">Ingresar</button>
-    <div class="login-err" id="login-err"></div>
-    <div class="login-reset" onclick="doReset()">¿Olvidaste tu contraseña?</div>
-    <div class="login-footer">© 2026 Asesorías y Consultorías JNF S.A.S. · NIT: 901.904.435-9</div>
+  <div style="position:relative;width:100%;max-width:420px;">
+    <img id="login-logo" src="" alt="JNF" class="login-logo-float"/>
+    <div class="login-box">
+      <div class="login-title">Sistema de Gestión Interna</div>
+      <div class="login-sub">Asesorías y Consultorías JNF S.A.S.</div>
+      <div class="login-field"><label>Correo electrónico</label><input type="email" id="login-email" placeholder="correo@ejemplo.com" onkeydown="if(event.key==='Enter')doLogin()"/></div>
+      <div class="login-field"><label>Contraseña</label><input type="password" id="login-pwd" placeholder="••••••••" onkeydown="if(event.key==='Enter')doLogin()"/></div>
+      <button class="btn-login" id="btn-login" onclick="doLogin()">Ingresar</button>
+      <div class="login-err" id="login-err"></div>
+      <div class="login-reset" onclick="doReset()">¿Olvidaste tu contraseña?</div>
+      <div class="login-footer">© 2026 Asesorías y Consultorías JNF S.A.S. · NIT: 901.904.435-9</div>
+  </div>
   </div>
 </div>
 
@@ -463,7 +467,7 @@ body{font-family:'Montserrat',sans-serif;background:var(--bg);color:var(--text);
 
     <div class="form-card admin-only">
       <h2>Registrar nuevo ingreso</h2>
-      <div class="form-grid">
+      <div class="form-grid" style="grid-template-columns:2fr 1.5fr 1fr 1fr 1fr 1fr 1.2fr 1fr auto;gap:8px;">
         <label>Nombre del trabajo<input type="text" id="t-inp-title" placeholder="Ej: Consultoría fiscal"/></label>
         <label>Cliente<input type="text" id="t-inp-client" placeholder="Ej: Empresa ABC"/></label>
         <label>Fecha de inicio<input type="date" id="t-inp-start"/></label>
@@ -544,7 +548,7 @@ body{font-family:'Montserrat',sans-serif;background:var(--bg);color:var(--text);
 
     <div class="form-card admin-only">
       <h2>Registrar nuevo egreso</h2>
-      <div class="form-grid">
+      <div class="form-grid" style="grid-template-columns:2fr 1.5fr 1.5fr 1fr 1.2fr 1.2fr 1fr auto;gap:8px;">
         <label>Descripción<input type="text" id="e-inp-desc" placeholder="Ej: Pago arriendo"/></label>
         <label>Proveedor<input type="text" id="e-inp-prov" placeholder="Ej: Inmobiliaria XYZ"/></label>
         <label>Categoría<select id="e-inp-cat"><option value="Arriendo">Arriendo</option><option value="Cafetería">Cafetería</option><option value="Educación">Educación</option><option value="Honorarios">Honorarios</option><option value="Impuestos">Impuestos</option><option value="Nómina">Nómina</option><option value="Papelería">Papelería</option><option value="Publicidad">Publicidad</option><option value="Servicios públicos">Servicios públicos</option><option value="Tecnología">Tecnología</option><option value="Transporte">Transporte</option><option value="Otro">Otro</option></select></label>
@@ -1430,6 +1434,7 @@ async function loadUsers(){
         </div>
         <div style="display:flex;flex-direction:column;gap:6px;">
           <button class="btn-edit" style="display:flex;" onclick="openUEditModal('${u.uid}','${(u.nombre||'').replace(/'/g,"\\'")}','${u.rol}',${JSON.stringify(u.modulos||[])})">✏ Editar</button>
+          <button class="btn-del" style="display:flex;" onclick="deleteUser('${u.uid}','${(u.nombre||u.email).replace(/'/g,"\\'")}')">🗑 Eliminar</button>
         </div>
       </div>`;
     }).join('');
@@ -1509,6 +1514,32 @@ async function saveUserEdit(){
     sucEl.textContent='✓ Usuario actualizado.';
     setTimeout(()=>{closeUEditModal();loadUsers();},1200);
   }catch(e){errEl.textContent='Error: '+e.message;}
+}
+
+// ============================================================
+// DELETE USER
+// ============================================================
+async function deleteUser(uid, nombre){
+  if(!isAdmin()){alert('Solo el administrador puede eliminar usuarios.');return;}
+  if(uid===window._currentUser?.uid){alert('No puedes eliminar tu propia cuenta.');return;}
+  if(!confirm('¿Seguro que deseas eliminar al usuario "'+nombre+'"?\nEsta acción no se puede deshacer.')){return;}
+  const pwd=prompt('Ingresa tu contraseña de administrador para confirmar:');
+  if(!pwd){return;}
+  try{
+    // Re-verify admin password
+    const{signInWithEmailAndPassword}=window._fb;
+    await signInWithEmailAndPassword(window._fb.auth, window._currentUser.email, pwd);
+    // Delete from Firestore (cannot delete Auth user from client SDK without admin SDK)
+    await window._fb.deleteDoc(window._fb.doc(window._fb.db,'usuarios',uid));
+    alert('✓ Usuario "'+nombre+'" eliminado del sistema.\n(Para eliminar el acceso de login, hazlo desde Firebase Console → Authentication)');
+    loadUsers();
+  }catch(e){
+    if(e.code==='auth/wrong-password'||e.code==='auth/invalid-credential'){
+      alert('Contraseña incorrecta. No se eliminó el usuario.');
+    } else {
+      alert('Error: '+e.message);
+    }
+  }
 }
 
 // ============================================================
