@@ -420,6 +420,7 @@ body{font-family:'Montserrat',sans-serif;background:var(--bg);color:var(--text);
         <div class="header-name">Asesorías y Consultorías JNF S.A.S.</div>
         <div class="header-sub">Sistema de Gestión Interna</div>
       </div>
+      <div id="atom-header-slot"></div>
       <div class="nit-badge">NIT: 901.904.435-9</div>
       <div class="header-user" style="cursor:pointer;" onclick="openEditNombreModal()" title="Editar mi nombre">
         <strong id="hdr-nombre">—</strong>
@@ -780,32 +781,33 @@ body{font-family:'Montserrat',sans-serif;background:var(--bg);color:var(--text);
       </div>
     </div>
     <!-- Modal Editar Usuario -->
-    <div class="modal-overlay" id="u-modal-edit">
-      <div class="modal blue-top" style="width:480px;">
-        <h3>Editar usuario</h3>
-        <input type="hidden" id="ue-uid"/>
-        <label class="modal-label">Nombre<input type="text" id="ue-nombre"/></label>
-        <label class="modal-label">Rol<select id="ue-rol"><option value="usuario">Usuario</option><option value="admin">Administrador</option></select></label>
-        <div style="margin:8px 0 4px;font-size:11px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.4px;">Módulos permitidos</div>
-        <div class="checkbox-group">
-          <label class="checkbox-item"><input type="checkbox" id="ue-mod-inicio"/> 🏠 Inicio</label>
-          <label class="checkbox-item"><input type="checkbox" id="ue-mod-trabajos"/> 📋 Trabajos</label>
-          <label class="checkbox-item"><input type="checkbox" id="ue-mod-ingresos"/> 💰 Ingresos (solo admin)</label>
-          <label class="checkbox-item"><input type="checkbox" id="ue-mod-egresos"/> 💸 Egresos</label>
-          <label class="checkbox-item"><input type="checkbox" id="ue-mod-financiero"/> 📊 Arqueo de Caja</label>
-          <label class="checkbox-item"><input type="checkbox" id="ue-mod-auditoria"/> 🔎 Auditoría (solo admin)</label>
-        </div>
-        <div class="modal-error" id="ue-error"></div>
-        <div class="modal-success" id="ue-success"></div>
-        <div class="modal-actions"><button class="btn-cancel" onclick="closeUEditModal()">Cancelar</button><button class="btn-primary" onclick="saveUserEdit()">Guardar</button></div>
-      </div>
-    </div>
-
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.5rem;">
       <div><h2 style="font-size:18px;font-weight:700;color:var(--blue-dark);">Gestión de Usuarios</h2><p style="font-size:13px;color:var(--text2);margin-top:4px;">Crea usuarios y asigna sus permisos de acceso.</p></div>
       <button class="btn-primary" onclick="openUCreateModal()">+ Nuevo usuario</button>
     </div>
     <div id="users-list"></div>
+  </div>
+
+  <!-- Modal Editar Usuario — fuera del tab para evitar display:none -->
+  <div class="modal-overlay" id="u-modal-edit">
+    <div class="modal blue-top" style="width:480px;">
+      <h3>Editar usuario</h3>
+      <input type="hidden" id="ue-uid"/>
+      <label class="modal-label">Nombre<input type="text" id="ue-nombre"/></label>
+      <label class="modal-label">Rol<select id="ue-rol"><option value="usuario">Usuario</option><option value="admin">Administrador</option></select></label>
+      <div style="margin:8px 0 4px;font-size:11px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.4px;">Módulos permitidos</div>
+      <div class="checkbox-group">
+        <label class="checkbox-item"><input type="checkbox" id="ue-mod-inicio"/> 🏠 Inicio</label>
+        <label class="checkbox-item"><input type="checkbox" id="ue-mod-trabajos"/> 📋 Trabajos</label>
+        <label class="checkbox-item"><input type="checkbox" id="ue-mod-ingresos"/> 💰 Ingresos (solo admin)</label>
+        <label class="checkbox-item"><input type="checkbox" id="ue-mod-egresos"/> 💸 Egresos</label>
+        <label class="checkbox-item"><input type="checkbox" id="ue-mod-financiero"/> 📊 Arqueo de Caja</label>
+        <label class="checkbox-item"><input type="checkbox" id="ue-mod-auditoria"/> 🔎 Auditoría (solo admin)</label>
+      </div>
+      <div class="modal-error" id="ue-error"></div>
+      <div class="modal-success" id="ue-success"></div>
+      <div class="modal-actions"><button class="btn-cancel" onclick="closeUEditModal()">Cancelar</button><button class="btn-primary" onclick="saveUserEdit()">Guardar</button></div>
+    </div>
   </div>
 
   <!-- Modal editar mi nombre -->
@@ -1725,6 +1727,7 @@ async function saveUserEdit(){
   if(document.getElementById('ue-mod-ingresos').checked)modulos.push('ingresos');
   if(document.getElementById('ue-mod-egresos').checked)modulos.push('egresos');
   if(document.getElementById('ue-mod-financiero').checked)modulos.push('financiero');
+  if(document.getElementById('ue-mod-auditoria').checked)modulos.push('auditoria');
   const errEl=document.getElementById('ue-error');
   const sucEl=document.getElementById('ue-success');
   errEl.textContent='';sucEl.textContent='';
@@ -1954,19 +1957,18 @@ setInterval(()=>{checkTAlerts();checkEgresosAlerts();},3600000);
 <!-- INDICADOR ONLINE / OFFLINE — ÁTOMO JNF -->
 <style>
 #atom-indicator{
-  position:fixed;bottom:24px;right:24px;z-index:9999;
-  display:none;
-  flex-direction:column;align-items:center;gap:6px;
+  position:fixed;top:12px;right:16px;z-index:9999;
+  display:flex;
+  flex-direction:column;align-items:center;gap:3px;
 }
-#atom-indicator.show{display:flex;}
 #atom-wrap{
-  position:relative;width:86px;height:86px;
+  position:relative;width:43px;height:43px;
   display:flex;align-items:center;justify-content:center;
 }
 #atom-nucleus{
-  width:22px;height:22px;border-radius:50%;
+  width:11px;height:11px;border-radius:50%;
   background:radial-gradient(circle at 35% 35%,#4a7fe5,#1a2580);
-  border:2px solid #c9a227;
+  border:1.5px solid #c9a227;
   position:absolute;z-index:10;
   transition:all 0.5s ease;
   animation:pulseBlueA 1.5s infinite;
@@ -1977,7 +1979,7 @@ setInterval(()=>{checkTAlerts();checkEgresosAlerts();},3600000);
   animation:pulseRedA 1s infinite;
 }
 #atom-label{
-  font-size:10px;font-weight:800;letter-spacing:1.5px;
+  font-size:7px;font-weight:800;letter-spacing:1px;
   color:#c9a227;font-family:'Montserrat',sans-serif;
   animation:neonGoldA 2.5s infinite;
   transition:all 0.5s ease;
@@ -1998,7 +2000,7 @@ setInterval(()=>{checkTAlerts();checkEgresosAlerts();},3600000);
 
 <div id="atom-indicator">
   <div id="atom-wrap" class="online-anim">
-    <svg id="atom-svg" viewBox="0 0 86 86" width="86" height="86" style="position:absolute;">
+    <svg id="atom-svg" viewBox="0 0 86 86" width="43" height="43" style="position:absolute;">
       <ellipse id="orb1" cx="43" cy="43" rx="40" ry="16" fill="none" stroke="#c9a227" stroke-width="2" transform="rotate(0 43 43)"/>
       <ellipse id="orb2" cx="43" cy="43" rx="40" ry="16" fill="none" stroke="#c9a227" stroke-width="2" transform="rotate(60 43 43)"/>
       <ellipse id="orb3" cx="43" cy="43" rx="40" ry="16" fill="none" stroke="#c9a227" stroke-width="2" transform="rotate(120 43 43)"/>
@@ -2027,6 +2029,31 @@ setInterval(()=>{checkTAlerts();checkEgresosAlerts();},3600000);
   const msg       = document.getElementById('atom-msg');
   const atomWrap  = document.getElementById('atom-wrap');
 
+  // Reubicar átomo: en splash/login → fixed top-right
+  // En app → dentro del header slot
+  function relocateAtom(){
+    const slot = document.getElementById('atom-header-slot');
+    const appScreen = document.getElementById('screen-app');
+    const isAppVisible = appScreen && appScreen.style.display !== 'none' && appScreen.classList.contains('active');
+    if(isAppVisible && slot){
+      slot.appendChild(indicator);
+      indicator.style.position = 'relative';
+      indicator.style.top = 'auto';
+      indicator.style.right = 'auto';
+      indicator.style.marginRight = '8px';
+    } else {
+      document.body.appendChild(indicator);
+      indicator.style.position = 'fixed';
+      indicator.style.top = '12px';
+      indicator.style.right = '16px';
+      indicator.style.marginRight = '0';
+    }
+  }
+  // Observar cambios en pantalla
+  const observer = new MutationObserver(relocateAtom);
+  observer.observe(document.body, {childList:true, subtree:true, attributes:true, attributeFilter:['style','class']});
+  relocateAtom();
+
   function setAtomColor(online){
     const orbs=['orb1','orb2','orb3'];
     const els=['e1','e2','e3'];
@@ -2053,15 +2080,12 @@ setInterval(()=>{checkTAlerts();checkEgresosAlerts();},3600000);
     label.textContent   = 'EN LÍNEA';
     msg.textContent     = 'Sincronizando datos...';
     setAtomColor(true);
-    setTimeout(()=>{
-      indicator.className = '';
-    }, 4000);
   }
 
   window.addEventListener('offline', setOffline);
   window.addEventListener('online',  setOnline);
 
-  if(!navigator.onLine) setOffline();
+  if(!navigator.onLine){ setOffline(); } else { setOnline(); }
 })();
 </script>
 </body>
