@@ -1740,7 +1740,6 @@ function openUEditModal(uid,nombre,rol,modulos){
   document.getElementById('ue-error').textContent='';
   document.getElementById('ue-success').textContent='';
   modal.style.display='flex';
-  modal.classList.add('active');
 }
 
 // Función simplificada que busca usuario por uid desde el cache
@@ -1754,7 +1753,7 @@ function openUEditModalById(uid){
 }
 function closeUEditModal(){
   const modal=document.getElementById('u-modal-edit');
-  if(modal){modal.classList.remove('active');modal.style.display='';}
+  if(modal)modal.style.display='none';
 }
 
 async function saveUserEdit(){
@@ -2081,7 +2080,7 @@ setInterval(()=>{checkTAlerts();checkEgresosAlerts();},3600000);
 })();
 </script>
 <!-- Modal Editar Usuario — fuera del tab para evitar display:none -->
-  <div class="modal-overlay" id="u-modal-edit" style="z-index:9998;">
+  <div id="u-modal-edit" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9999;align-items:center;justify-content:center;">
     <div class="modal blue-top" style="width:480px;">
       <h3>Editar usuario</h3>
       <input type="hidden" id="ue-uid"/>
