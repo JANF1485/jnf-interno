@@ -420,7 +420,6 @@ body{font-family:'Montserrat',sans-serif;background:var(--bg);color:var(--text);
         <div class="header-name">Asesorías y Consultorías JNF S.A.S.</div>
         <div class="header-sub">Sistema de Gestión Interna</div>
       </div>
-      <div id="atom-header-slot"></div>
       <div class="nit-badge">NIT: 901.904.435-9</div>
       <div class="header-user" style="cursor:pointer;" onclick="openEditNombreModal()" title="Editar mi nombre">
         <strong id="hdr-nombre">—</strong>
@@ -1957,10 +1956,11 @@ setInterval(()=>{checkTAlerts();checkEgresosAlerts();},3600000);
 <!-- INDICADOR ONLINE / OFFLINE — ÁTOMO JNF -->
 <style>
 #atom-indicator{
-  position:fixed;top:12px;right:16px;z-index:9999;
-  display:flex;
-  flex-direction:column;align-items:center;gap:3px;
+  position:fixed;top:10px;right:220px;z-index:9999;
+  display:none;
+  flex-direction:column;align-items:center;gap:2px;
 }
+#atom-indicator.visible{display:flex;}
 #atom-wrap{
   position:relative;width:43px;height:43px;
   display:flex;align-items:center;justify-content:center;
@@ -2029,31 +2029,6 @@ setInterval(()=>{checkTAlerts();checkEgresosAlerts();},3600000);
   const msg       = document.getElementById('atom-msg');
   const atomWrap  = document.getElementById('atom-wrap');
 
-  // Reubicar átomo: en splash/login → fixed top-right
-  // En app → dentro del header slot
-  function relocateAtom(){
-    const slot = document.getElementById('atom-header-slot');
-    const appScreen = document.getElementById('screen-app');
-    const isAppVisible = appScreen && appScreen.style.display !== 'none' && appScreen.classList.contains('active');
-    if(isAppVisible && slot){
-      slot.appendChild(indicator);
-      indicator.style.position = 'relative';
-      indicator.style.top = 'auto';
-      indicator.style.right = 'auto';
-      indicator.style.marginRight = '8px';
-    } else {
-      document.body.appendChild(indicator);
-      indicator.style.position = 'fixed';
-      indicator.style.top = '12px';
-      indicator.style.right = '16px';
-      indicator.style.marginRight = '0';
-    }
-  }
-  // Observar cambios en pantalla
-  const observer = new MutationObserver(relocateAtom);
-  observer.observe(document.body, {childList:true, subtree:true, attributes:true, attributeFilter:['style','class']});
-  relocateAtom();
-
   function setAtomColor(online){
     const orbs=['orb1','orb2','orb3'];
     const els=['e1','e2','e3'];
@@ -2085,6 +2060,16 @@ setInterval(()=>{checkTAlerts();checkEgresosAlerts();},3600000);
   window.addEventListener('offline', setOffline);
   window.addEventListener('online',  setOnline);
 
+  // Mostrar átomo solo en pantalla app
+  function updateAtomVisibility(){
+    const app = document.getElementById('screen-app');
+    if(app && app.classList.contains('active')){
+      indicator.classList.add('visible');
+    } else {
+      indicator.classList.remove('visible');
+    }
+  }
+  setInterval(updateAtomVisibility, 500);
   if(!navigator.onLine){ setOffline(); } else { setOnline(); }
 })();
 </script>
