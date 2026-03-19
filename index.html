@@ -807,28 +807,6 @@ body{font-family:'Montserrat',sans-serif;background:var(--bg);color:var(--text);
     <div id="users-list"></div>
   </div>
 
-  <!-- Modal Editar Usuario — fuera del tab para evitar display:none -->
-  <div class="modal-overlay" id="u-modal-edit" style="z-index:9998;">
-    <div class="modal blue-top" style="width:480px;">
-      <h3>Editar usuario</h3>
-      <input type="hidden" id="ue-uid"/>
-      <label class="modal-label">Nombre<input type="text" id="ue-nombre"/></label>
-      <label class="modal-label">Rol<select id="ue-rol"><option value="usuario">Usuario</option><option value="admin">Administrador</option></select></label>
-      <div style="margin:8px 0 4px;font-size:11px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.4px;">Módulos permitidos</div>
-      <div class="checkbox-group">
-        <label class="checkbox-item"><input type="checkbox" id="ue-mod-inicio"/> 🏠 Inicio</label>
-        <label class="checkbox-item"><input type="checkbox" id="ue-mod-trabajos"/> 📋 Trabajos</label>
-        <label class="checkbox-item"><input type="checkbox" id="ue-mod-ingresos"/> 💰 Ingresos (solo admin)</label>
-        <label class="checkbox-item"><input type="checkbox" id="ue-mod-egresos"/> 💸 Egresos</label>
-        <label class="checkbox-item"><input type="checkbox" id="ue-mod-financiero"/> 📊 Arqueo de Caja</label>
-        <label class="checkbox-item"><input type="checkbox" id="ue-mod-auditoria"/> 🔎 Auditoría (solo admin)</label>
-      </div>
-      <div class="modal-error" id="ue-error"></div>
-      <div class="modal-success" id="ue-success"></div>
-      <div class="modal-actions"><button class="btn-cancel" onclick="closeUEditModal()">Cancelar</button><button class="btn-primary" onclick="saveUserEdit()">Guardar</button></div>
-    </div>
-  </div>
-
   <!-- Modal editar mi nombre -->
   <div class="modal-overlay" id="modal-edit-nombre" style="z-index:9998;">
     <div class="modal blue-top" style="width:380px;">
@@ -1697,25 +1675,26 @@ async function createUser(){
       const modNombres={inicio:'🏠 Inicio',trabajos:'📋 Trabajos',ingresos:'💰 Ingresos',egresos:'💸 Egresos',financiero:'📊 Arqueo de Caja',auditoria:'🔎 Auditoría'};
       const modulosTexto=modulos.map(m=>modNombres[m]||m).join(', ');
       const clienteTexto=cliente?'Se te ha asignado el manejo del cliente: <strong>'+cliente+'</strong>.':'';
-      await emailjs.send(
+      const emailResult = await emailjs.send(
         'service_2wchwje',
         'kxma7ar',
         {
           to_name: nombre,
           to_email: email,
-          email: email,
+          from_name: 'Asesorías y Consultorías JNF S.A.S.',
           password: pwd,
           cliente: cliente||'Sin asignar',
-          cliente_texto: clienteTexto,
           modulos: modulosTexto,
           rol: rol==='admin'?'Administrador':'Usuario',
           empresa: 'Asesorías y Consultorías JNF S.A.S.',
           url_acceso: window.location.href
-        }
+        },
+        'dRdLxzZiL34N9-Dc8'
       );
+      console.log('EmailJS resultado:', emailResult);
     }catch(emailErr){
-      console.error('EmailJS error:', emailErr);
-      sucEl.textContent='✓ Usuario creado. Error correo: '+emailErr.text||emailErr.message||JSON.stringify(emailErr);
+      console.error('EmailJS error completo:', JSON.stringify(emailErr), emailErr);
+      sucEl.textContent='Error email: status='+emailErr.status+' text='+emailErr.text;
       setTimeout(()=>{closeUCreateModal();loadUsers();},3000);
       return;
     }
@@ -2068,5 +2047,27 @@ setInterval(()=>{checkTAlerts();checkEgresosAlerts();},3600000);
   if(!navigator.onLine){ setOffline(); } else { setOnline(); }
 })();
 </script>
+<!-- Modal Editar Usuario — fuera del tab para evitar display:none -->
+  <div class="modal-overlay" id="u-modal-edit" style="z-index:9998;">
+    <div class="modal blue-top" style="width:480px;">
+      <h3>Editar usuario</h3>
+      <input type="hidden" id="ue-uid"/>
+      <label class="modal-label">Nombre<input type="text" id="ue-nombre"/></label>
+      <label class="modal-label">Rol<select id="ue-rol"><option value="usuario">Usuario</option><option value="admin">Administrador</option></select></label>
+      <div style="margin:8px 0 4px;font-size:11px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.4px;">Módulos permitidos</div>
+      <div class="checkbox-group">
+        <label class="checkbox-item"><input type="checkbox" id="ue-mod-inicio"/> 🏠 Inicio</label>
+        <label class="checkbox-item"><input type="checkbox" id="ue-mod-trabajos"/> 📋 Trabajos</label>
+        <label class="checkbox-item"><input type="checkbox" id="ue-mod-ingresos"/> 💰 Ingresos (solo admin)</label>
+        <label class="checkbox-item"><input type="checkbox" id="ue-mod-egresos"/> 💸 Egresos</label>
+        <label class="checkbox-item"><input type="checkbox" id="ue-mod-financiero"/> 📊 Arqueo de Caja</label>
+        <label class="checkbox-item"><input type="checkbox" id="ue-mod-auditoria"/> 🔎 Auditoría (solo admin)</label>
+      </div>
+      <div class="modal-error" id="ue-error"></div>
+      <div class="modal-success" id="ue-success"></div>
+      <div class="modal-actions"><button class="btn-cancel" onclick="closeUEditModal()">Cancelar</button><button class="btn-primary" onclick="saveUserEdit()">Guardar</button></div>
+    </div>
+  </div>
+
 </body>
 </html>
