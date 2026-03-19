@@ -420,6 +420,26 @@ body{font-family:'Montserrat',sans-serif;background:var(--bg);color:var(--text);
         <div class="header-name">Asesorías y Consultorías JNF S.A.S.</div>
         <div class="header-sub">Sistema de Gestión Interna</div>
       </div>
+      <div id="atom-indicator">
+        <div id="atom-wrap" class="online-anim">
+          <svg id="atom-svg" viewBox="0 0 86 86" width="43" height="43" style="position:absolute;">
+            <ellipse id="orb1" cx="43" cy="43" rx="40" ry="16" fill="none" stroke="#c9a227" stroke-width="2" transform="rotate(0 43 43)"/>
+            <ellipse id="orb2" cx="43" cy="43" rx="40" ry="16" fill="none" stroke="#c9a227" stroke-width="2" transform="rotate(60 43 43)"/>
+            <ellipse id="orb3" cx="43" cy="43" rx="40" ry="16" fill="none" stroke="#c9a227" stroke-width="2" transform="rotate(120 43 43)"/>
+            <circle id="e1" cx="83" cy="43" r="5" fill="#c9a227">
+              <animateTransform attributeName="transform" type="rotate" from="0 43 43" to="360 43 43" dur="2s" repeatCount="indefinite"/>
+            </circle>
+            <circle id="e2" cx="83" cy="43" r="5" fill="#ffe066">
+              <animateTransform attributeName="transform" type="rotate" from="120 43 43" to="480 43 43" dur="3s" repeatCount="indefinite"/>
+            </circle>
+            <circle id="e3" cx="83" cy="43" r="5" fill="#c9a227">
+              <animateTransform attributeName="transform" type="rotate" from="240 43 43" to="600 43 43" dur="2.5s" repeatCount="indefinite"/>
+            </circle>
+          </svg>
+          <div id="atom-nucleus"></div>
+        </div>
+        <div id="atom-label">EN LÍNEA</div>
+      </div>
       <div class="nit-badge">NIT: 901.904.435-9</div>
       <div class="header-user" style="cursor:pointer;" onclick="openEditNombreModal()" title="Editar mi nombre">
         <strong id="hdr-nombre">—</strong>
@@ -1956,11 +1976,10 @@ setInterval(()=>{checkTAlerts();checkEgresosAlerts();},3600000);
 <!-- INDICADOR ONLINE / OFFLINE — ÁTOMO JNF -->
 <style>
 #atom-indicator{
-  position:fixed;top:10px;right:220px;z-index:9999;
-  display:none;
+  display:flex;
   flex-direction:column;align-items:center;gap:2px;
+  margin-right:8px;
 }
-#atom-indicator.visible{display:flex;}
 #atom-wrap{
   position:relative;width:43px;height:43px;
   display:flex;align-items:center;justify-content:center;
@@ -1998,27 +2017,7 @@ setInterval(()=>{checkTAlerts();checkEgresosAlerts();},3600000);
 #atom-wrap.offline-anim{animation:atomRedGlow 1.5s infinite;}
 </style>
 
-<div id="atom-indicator">
-  <div id="atom-wrap" class="online-anim">
-    <svg id="atom-svg" viewBox="0 0 86 86" width="43" height="43" style="position:absolute;">
-      <ellipse id="orb1" cx="43" cy="43" rx="40" ry="16" fill="none" stroke="#c9a227" stroke-width="2" transform="rotate(0 43 43)"/>
-      <ellipse id="orb2" cx="43" cy="43" rx="40" ry="16" fill="none" stroke="#c9a227" stroke-width="2" transform="rotate(60 43 43)"/>
-      <ellipse id="orb3" cx="43" cy="43" rx="40" ry="16" fill="none" stroke="#c9a227" stroke-width="2" transform="rotate(120 43 43)"/>
-      <circle id="e1" cx="83" cy="43" r="5" fill="#c9a227">
-        <animateTransform attributeName="transform" type="rotate" from="0 43 43" to="360 43 43" dur="2s" repeatCount="indefinite"/>
-      </circle>
-      <circle id="e2" cx="83" cy="43" r="5" fill="#ffe066">
-        <animateTransform attributeName="transform" type="rotate" from="120 43 43" to="480 43 43" dur="3s" repeatCount="indefinite"/>
-      </circle>
-      <circle id="e3" cx="83" cy="43" r="5" fill="#c9a227">
-        <animateTransform attributeName="transform" type="rotate" from="240 43 43" to="600 43 43" dur="2.5s" repeatCount="indefinite"/>
-      </circle>
-    </svg>
-    <div id="atom-nucleus"></div>
-  </div>
-  <div id="atom-label">EN LÍNEA</div>
-  <div id="atom-msg">Sistema conectado</div>
-</div>
+
 
 <script>
 // ── DETECTOR ONLINE / OFFLINE — ÁTOMO JNF ─────────────────
@@ -2026,7 +2025,6 @@ setInterval(()=>{checkTAlerts();checkEgresosAlerts();},3600000);
   const indicator = document.getElementById('atom-indicator');
   const nucleus   = document.getElementById('atom-nucleus');
   const label     = document.getElementById('atom-label');
-  const msg       = document.getElementById('atom-msg');
   const atomWrap  = document.getElementById('atom-wrap');
 
   function setAtomColor(online){
@@ -2043,7 +2041,6 @@ setInterval(()=>{checkTAlerts();checkEgresosAlerts();},3600000);
     label.className     = 'offline';
     atomWrap.className  = 'offline-anim';
     label.textContent   = 'SIN SEÑAL';
-    msg.textContent     = 'Modo offline activo';
     setAtomColor(false);
   }
 
@@ -2053,23 +2050,12 @@ setInterval(()=>{checkTAlerts();checkEgresosAlerts();},3600000);
     label.className     = '';
     atomWrap.className  = 'online-anim';
     label.textContent   = 'EN LÍNEA';
-    msg.textContent     = 'Sincronizando datos...';
     setAtomColor(true);
   }
 
   window.addEventListener('offline', setOffline);
   window.addEventListener('online',  setOnline);
 
-  // Mostrar átomo solo en pantalla app
-  function updateAtomVisibility(){
-    const app = document.getElementById('screen-app');
-    if(app && app.classList.contains('active')){
-      indicator.classList.add('visible');
-    } else {
-      indicator.classList.remove('visible');
-    }
-  }
-  setInterval(updateAtomVisibility, 500);
   if(!navigator.onLine){ setOffline(); } else { setOnline(); }
 })();
 </script>
