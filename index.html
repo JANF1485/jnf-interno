@@ -763,9 +763,12 @@ body{font-family:'Montserrat',sans-serif;background:var(--bg);color:var(--text);
         <label class="modal-label">Cliente asignado (opcional)<input type="text" id="u-cliente" placeholder="Ej: Empresa ABC S.A.S."/></label>
         <div style="margin:8px 0 4px;font-size:11px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.4px;">Módulos permitidos</div>
         <div class="checkbox-group">
+          <label class="checkbox-item"><input type="checkbox" id="u-mod-inicio" checked/> 🏠 Inicio</label>
           <label class="checkbox-item"><input type="checkbox" id="u-mod-trabajos" checked/> 📋 Trabajos</label>
+          <label class="checkbox-item"><input type="checkbox" id="u-mod-ingresos"/> 💰 Ingresos (solo admin)</label>
           <label class="checkbox-item"><input type="checkbox" id="u-mod-egresos" checked/> 💸 Egresos</label>
           <label class="checkbox-item"><input type="checkbox" id="u-mod-financiero" checked/> 📊 Arqueo de Caja</label>
+          <label class="checkbox-item"><input type="checkbox" id="u-mod-auditoria"/> 🔎 Auditoría (solo admin)</label>
         </div>
         <div class="modal-error" id="u-create-error"></div>
         <div class="modal-success" id="u-create-success"></div>
@@ -781,9 +784,12 @@ body{font-family:'Montserrat',sans-serif;background:var(--bg);color:var(--text);
         <label class="modal-label">Rol<select id="ue-rol"><option value="usuario">Usuario</option><option value="admin">Administrador</option></select></label>
         <div style="margin:8px 0 4px;font-size:11px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.4px;">Módulos permitidos</div>
         <div class="checkbox-group">
-          <label class="checkbox-item"><input type="checkbox" id="ue-mod-trabajos"/> 📋 Tablero de Ingresos</label>
-          <label class="checkbox-item"><input type="checkbox" id="ue-mod-egresos"/> 💸 Tablero de Egresos</label>
+          <label class="checkbox-item"><input type="checkbox" id="ue-mod-inicio"/> 🏠 Inicio</label>
+          <label class="checkbox-item"><input type="checkbox" id="ue-mod-trabajos"/> 📋 Trabajos</label>
+          <label class="checkbox-item"><input type="checkbox" id="ue-mod-ingresos"/> 💰 Ingresos (solo admin)</label>
+          <label class="checkbox-item"><input type="checkbox" id="ue-mod-egresos"/> 💸 Egresos</label>
           <label class="checkbox-item"><input type="checkbox" id="ue-mod-financiero"/> 📊 Arqueo de Caja</label>
+          <label class="checkbox-item"><input type="checkbox" id="ue-mod-auditoria"/> 🔎 Auditoría (solo admin)</label>
         </div>
         <div class="modal-error" id="ue-error"></div>
         <div class="modal-success" id="ue-success"></div>
@@ -895,15 +901,19 @@ function showApp(perfil){
   }
   // Show/hide tabs based on modules
   const modulos=isAdmin()?['trabajos','ingresos','egresos','financiero','auditoria','usuarios']:(perfil.modulos||['trabajos','egresos','financiero']);
+  // Tabs accesibles por todos según módulos asignados
   ['trabajos','egresos','financiero'].forEach(m=>{
     const tab=document.getElementById('tab-'+m);
     if(tab)tab.style.display=modulos.includes(m)?'block':'none';
   });
-  // Tabs solo admin
-  ['ingresos','auditoria','usuarios'].forEach(m=>{
+  // Tabs que pueden asignarse a cualquier usuario
+  ['ingresos','auditoria'].forEach(m=>{
     const tab=document.getElementById('tab-'+m);
-    if(tab)tab.style.display=isAdmin()?'block':'none';
+    if(tab)tab.style.display=(isAdmin()||modulos.includes(m))?'block':'none';
   });
+  // Usuarios solo admin siempre
+  const tabU=document.getElementById('tab-usuarios');
+  if(tabU)tabU.style.display=isAdmin()?'block':'none';
   showScreen('app');
   // Go to first allowed tab
   const firstMod=isAdmin()?'inicio':(modulos.includes('trabajos')?'trabajos':modulos.includes('egresos')?'egresos':modulos.includes('financiero')?'financiero':'inicio');
@@ -1574,7 +1584,9 @@ async function loadUsers(){
     container.innerHTML=users.map(u=>{
       const initial=(u.nombre||u.email||'U')[0].toUpperCase();
       const mods=(u.modulos||[]);
-      const modTags=['trabajos','egresos','financiero'].map(m=>`<span class="modulo-tag ${mods.includes(m)?'on':''}">${m==='trabajos'?'💰 Ingresos':m==='egresos'?'💸 Egresos':'🔍 Arqueo'}</span>`).join('');
+      const modNombresCard={inicio:'🏠 Inicio',trabajos:'📋 Trabajos',ingresos:'💰 Ingresos',egresos:'💸 Egresos',financiero:'📊 Arqueo',auditoria:'🔎 Auditoría'};
+      const todosModulos=['inicio','trabajos','ingresos','egresos','financiero','auditoria'];
+      const modTags=todosModulos.map(m=>`<span class="modulo-tag ${mods.includes(m)?'on':''}">${modNombresCard[m]}</span>`).join('');
       return`<div class="user-card">
         <div class="user-avatar ${u.rol==='admin'?'admin':''}">${initial}</div>
         <div class="user-info">
@@ -1597,9 +1609,12 @@ function openUCreateModal(){
   document.getElementById('u-email').value='';
   document.getElementById('u-pwd').value='';
   document.getElementById('u-rol').value='usuario';
+  document.getElementById('u-mod-inicio').checked=true;
   document.getElementById('u-mod-trabajos').checked=true;
+  document.getElementById('u-mod-ingresos').checked=false;
   document.getElementById('u-mod-egresos').checked=true;
   document.getElementById('u-mod-financiero').checked=true;
+  document.getElementById('u-mod-auditoria').checked=false;
   document.getElementById('u-create-error').textContent='';
   document.getElementById('u-create-success').textContent='';
   document.getElementById('u-modal-create').classList.add('active');
@@ -1613,9 +1628,12 @@ async function createUser(){
   const rol=document.getElementById('u-rol').value;
   const cliente=document.getElementById('u-cliente').value.trim();
   const modulos=[];
+  if(document.getElementById('u-mod-inicio').checked)modulos.push('inicio');
   if(document.getElementById('u-mod-trabajos').checked)modulos.push('trabajos');
+  if(document.getElementById('u-mod-ingresos').checked)modulos.push('ingresos');
   if(document.getElementById('u-mod-egresos').checked)modulos.push('egresos');
   if(document.getElementById('u-mod-financiero').checked)modulos.push('financiero');
+  if(document.getElementById('u-mod-auditoria').checked)modulos.push('auditoria');
   const errEl=document.getElementById('u-create-error');
   const sucEl=document.getElementById('u-create-success');
   errEl.textContent='';sucEl.textContent='';
@@ -1628,7 +1646,8 @@ async function createUser(){
     await window._fb.signOut(window._fb.authSecondary);
     // Enviar correo de bienvenida con EmailJS
     try{
-      const modulosTexto=modulos.map(m=>m==='trabajos'?'📋 Tablero de Ingresos':m==='egresos'?'💸 Tablero de Egresos':'📊 Arqueo de Caja').join(', ');
+      const modNombres={inicio:'🏠 Inicio',trabajos:'📋 Trabajos',ingresos:'💰 Ingresos',egresos:'💸 Egresos',financiero:'📊 Arqueo de Caja',auditoria:'🔎 Auditoría'};
+      const modulosTexto=modulos.map(m=>modNombres[m]||m).join(', ');
       const clienteTexto=cliente?'Se te ha asignado el manejo del cliente: <strong>'+cliente+'</strong>.':'';
       await emailjs.send(
         'service_2wchwje',
@@ -1662,9 +1681,12 @@ function openUEditModal(uid,nombre,rol,modulos){
   document.getElementById('ue-uid').value=uid;
   document.getElementById('ue-nombre').value=nombre;
   document.getElementById('ue-rol').value=rol;
+  document.getElementById('ue-mod-inicio').checked=modulos.includes('inicio');
   document.getElementById('ue-mod-trabajos').checked=modulos.includes('trabajos');
+  document.getElementById('ue-mod-ingresos').checked=modulos.includes('ingresos');
   document.getElementById('ue-mod-egresos').checked=modulos.includes('egresos');
   document.getElementById('ue-mod-financiero').checked=modulos.includes('financiero');
+  document.getElementById('ue-mod-auditoria').checked=modulos.includes('auditoria');
   document.getElementById('ue-error').textContent='';
   document.getElementById('ue-success').textContent='';
   document.getElementById('u-modal-edit').classList.add('active');
@@ -1676,7 +1698,9 @@ async function saveUserEdit(){
   const nombre=document.getElementById('ue-nombre').value.trim();
   const rol=document.getElementById('ue-rol').value;
   const modulos=[];
+  if(document.getElementById('ue-mod-inicio').checked)modulos.push('inicio');
   if(document.getElementById('ue-mod-trabajos').checked)modulos.push('trabajos');
+  if(document.getElementById('ue-mod-ingresos').checked)modulos.push('ingresos');
   if(document.getElementById('ue-mod-egresos').checked)modulos.push('egresos');
   if(document.getElementById('ue-mod-financiero').checked)modulos.push('financiero');
   const errEl=document.getElementById('ue-error');
