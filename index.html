@@ -30,12 +30,14 @@ enableIndexedDbPersistence(db).catch(err=>{
   if(err.code==='failed-precondition'){console.warn('Offline: múltiples pestañas abiertas');}
   else if(err.code==='unimplemented'){console.warn('Offline: navegador no soportado');}
 });
+// Flag para saber si el splash ya fue visto en esta sesión de pestaña
+let _splashShown = false;
+
 onAuthStateChanged(auth,async user=>{
   if(user){
     try{
       let snap=await getDoc(doc(db,'usuarios_interno',user.uid));
       if(!snap.exists()){
-        // Intentar migrar desde colección antigua 'usuarios'
         const snapOld=await getDoc(doc(db,'usuarios',user.uid));
         if(snapOld.exists()){
           const data=snapOld.data();
@@ -46,14 +48,30 @@ onAuthStateChanged(auth,async user=>{
       const perfil=snap.exists()?snap.data():{email:user.email,rol:'usuario',nombre:user.email,modulos:['trabajos','egresos','financiero']};
       window._currentUser=user;
       window._perfil=perfil;
-      showApp(perfil);
+      // Si el splash no se ha mostrado aún, mostrarlo primero
+      if(!_splashShown){
+        _splashShown=true;
+        showScreen('splash');
+        // Guardar sesión pendiente para cuando el usuario haga clic en el splash
+        window._pendingLogin=perfil;
+      } else {
+        showApp(perfil);
+      }
     }catch(e){
       window._currentUser=user;
       window._perfil={email:user.email,rol:'usuario',nombre:user.email,modulos:['trabajos','egresos','financiero']};
-      showApp(window._perfil);
+      if(!_splashShown){
+        _splashShown=true;
+        showScreen('splash');
+        window._pendingLogin=window._perfil;
+      } else {
+        showApp(window._perfil);
+      }
     }
   }else{
-    window._currentUser=null;window._perfil=null;showScreen('login');
+    window._currentUser=null;window._perfil=null;
+    _splashShown=true;
+    showScreen('splash');
   }
 });
 </script>
@@ -76,8 +94,18 @@ body{font-family:'Montserrat',sans-serif;background:var(--bg);color:var(--text);
 /* SPLASH */
 #screen-splash{display:flex;align-items:center;justify-content:center;min-height:100vh;background:var(--blue-dark);flex-direction:column;gap:24px;cursor:pointer;}
 .splash-logo-wrap{position:relative;display:inline-block;border-radius:50%;}
-.splash-logo{width:180px;height:180px;border-radius:50%;object-fit:cover;border:4px solid var(--gold);box-shadow:0 0 0 8px rgba(201,162,39,0.2),0 20px 60px rgba(0,0,0,0.4);transition:transform .35s ease,box-shadow .35s ease,border-color .35s ease;}
-.splash-logo-wrap:hover .splash-logo{transform:scale(1.06);border-color:#ffe066;box-shadow:0 0 12px 4px rgba(255,215,0,0.9),0 0 30px 10px rgba(201,162,39,0.7),0 0 60px 20px rgba(201,162,39,0.4),0 0 90px 30px rgba(201,162,39,0.2),0 20px 60px rgba(0,0,0,0.5);}
+.splash-logo{width:216px;height:216px;border-radius:50%;object-fit:cover;border:5px solid var(--gold);box-shadow:0 0 0 10px rgba(201,162,39,0.25),0 25px 70px rgba(0,0,0,0.5);transition:transform .35s ease,box-shadow .35s ease,border-color .35s ease;}
+.splash-logo-wrap:hover .splash-logo{
+  transform:scale(1.06);
+  border-color:#fff176;
+  box-shadow:
+    0 0 18px 6px rgba(255,245,0,1),
+    0 0 40px 16px rgba(255,215,0,0.95),
+    0 0 80px 32px rgba(201,162,39,0.85),
+    0 0 130px 55px rgba(201,162,39,0.6),
+    0 0 200px 90px rgba(201,162,39,0.35),
+    0 25px 70px rgba(0,0,0,0.6);
+}
 .splash-name{font-size:24px;font-weight:800;color:var(--gold);text-align:center;}
 .splash-sub{font-size:13px;color:var(--blue-mid);letter-spacing:1px;text-transform:uppercase;}
 .splash-pulse{width:10px;height:10px;border-radius:50%;background:var(--gold);animation:pulse 2s infinite;}
@@ -802,7 +830,16 @@ function showScreen(name){
 }
 showScreen('splash');
 
-function splashEnter(){showScreen('login');}
+function splashEnter(){
+  if(window._pendingLogin){
+    // Ya hay sesión activa, ir directo a la app
+    const perfil=window._pendingLogin;
+    window._pendingLogin=null;
+    showApp(perfil);
+  } else {
+    showScreen('login');
+  }
+}
 
 // ============================================================
 // AUTH
