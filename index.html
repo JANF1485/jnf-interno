@@ -1677,7 +1677,7 @@ async function createUser(){
       const clienteTexto=cliente?'Se te ha asignado el manejo del cliente: <strong>'+cliente+'</strong>.':'';
       const emailResult = await emailjs.send(
         'service_4z85gif',
-        'kxma7ar',
+        'template_lzalhf8',
         {
           to_name: nombre,
           to_email: email,
@@ -1709,6 +1709,8 @@ async function createUser(){
 }
 
 function openUEditModal(uid,nombre,rol,modulos){
+  const modal=document.getElementById('u-modal-edit');
+  if(!modal){alert('Error: modal no encontrado');return;}
   document.getElementById('ue-uid').value=uid;
   document.getElementById('ue-nombre').value=nombre;
   document.getElementById('ue-rol').value=rol;
@@ -1720,9 +1722,13 @@ function openUEditModal(uid,nombre,rol,modulos){
   document.getElementById('ue-mod-auditoria').checked=modulos.includes('auditoria');
   document.getElementById('ue-error').textContent='';
   document.getElementById('ue-success').textContent='';
-  document.getElementById('u-modal-edit').classList.add('active');
+  modal.style.display='flex';
+  modal.classList.add('active');
 }
-function closeUEditModal(){document.getElementById('u-modal-edit').classList.remove('active');}
+function closeUEditModal(){
+  const modal=document.getElementById('u-modal-edit');
+  if(modal){modal.classList.remove('active');modal.style.display='';}
+}
 
 async function saveUserEdit(){
   const uid=document.getElementById('ue-uid').value;
