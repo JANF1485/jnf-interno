@@ -453,7 +453,7 @@ body{font-family:'Montserrat',sans-serif;background:var(--bg);color:var(--text);
 
   <div class="nav-tabs">
     <div class="nav-tabs-inner" id="nav-tabs-inner">
-      <button class="nav-tab active" id="tab-inicio" onclick="showTab('inicio')">🏠 Inicio</button>
+      <button class="nav-tab active" id="tab-inicio" onclick="showTab('inicio')" style="display:none;">🏠 Inicio</button>
       <button class="nav-tab" id="tab-trabajos" onclick="showTab('trabajos')">📋 Trabajos</button>
       <button class="nav-tab admin-only" id="tab-ingresos" onclick="showTab('ingresos')">💰 Ingresos</button>
       <button class="nav-tab" id="tab-egresos" onclick="showTab('egresos')">💸 Egresos</button>
@@ -553,7 +553,7 @@ body{font-family:'Montserrat',sans-serif;background:var(--bg);color:var(--text);
       <button class="btn-period-all" onclick="clearTPeriod()">Ver todos</button>
     </div>
 
-    <div class="form-card admin-only">
+    <div class="form-card">
       <h2>Registrar nuevo ingreso</h2>
       <div class="form-grid" style="grid-template-columns:2fr 1.5fr 1fr 1fr 1fr 1fr 1.2fr 1fr auto;gap:8px;max-width:100%;overflow:visible;">
         <label>Nombre del trabajo<input type="text" id="t-inp-title" placeholder="Consultoría fiscal"/></label>
@@ -926,6 +926,10 @@ function showApp(perfil){
   }
   // Show/hide tabs based on modules
   const modulos=isAdmin()?['trabajos','ingresos','egresos','financiero','auditoria','usuarios']:(perfil.modulos||['trabajos','egresos','financiero']);
+  // Tab inicio: solo si tiene módulo inicio o es admin
+  const tabInicio=document.getElementById('tab-inicio');
+  if(tabInicio)tabInicio.style.display=(isAdmin()||modulos.includes('inicio'))?'block':'none';
+
   // Tabs accesibles por todos según módulos asignados
   ['trabajos','egresos','financiero'].forEach(m=>{
     const tab=document.getElementById('tab-'+m);
@@ -939,9 +943,20 @@ function showApp(perfil){
   // Usuarios solo admin siempre
   const tabU=document.getElementById('tab-usuarios');
   if(tabU)tabU.style.display=isAdmin()?'block':'none';
+
+  // Tarjetas del dashboard: mostrar solo las permitidas
+  const dashCards=['trabajos','egresos','financiero'];
+  dashCards.forEach(m=>{
+    const card=document.querySelector('.dash-card.'+m);
+    if(card)card.style.display=modulos.includes(m)||isAdmin()?'flex':'none';
+  });
   showScreen('app');
   // Go to first allowed tab
-  const firstMod=isAdmin()?'inicio':(modulos.includes('trabajos')?'trabajos':modulos.includes('egresos')?'egresos':modulos.includes('financiero')?'financiero':'inicio');
+  let firstMod='trabajos';
+  if(isAdmin()||modulos.includes('inicio')) firstMod='inicio';
+  else if(modulos.includes('trabajos')) firstMod='trabajos';
+  else if(modulos.includes('egresos')) firstMod='egresos';
+  else if(modulos.includes('financiero')) firstMod='financiero';
   showTab(firstMod);
   renderTrabajos();
   renderEgresos();
