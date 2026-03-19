@@ -5,16 +5,31 @@
 <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
 <title>JNF Interno — Asesorías y Consultorías JNF S.A.S.</title>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <script type="module">
 import{initializeApp}from'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
 import{getAuth,signInWithEmailAndPassword,signOut,onAuthStateChanged,sendPasswordResetEmail,createUserWithEmailAndPassword}from'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
 import{getFirestore,doc,getDoc,setDoc,collection,getDocs,deleteDoc}from'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 const FB={apiKey:"AIzaSyDQdSWjbz38MsoysDczXCkmgmIdYVP56uU",authDomain:"jnf-app-3e464.firebaseapp.com",projectId:"jnf-app-3e464",storageBucket:"jnf-app-3e464.firebasestorage.app",messagingSenderId:"1083115526611",appId:"1:1083115526611:web:1248d3df30a5e692e67726"};
-const app=initializeApp(FB);
+const app=initializeApp(FB,'main');
 const auth=getAuth(app);
 const db=getFirestore(app);
-window._fb={auth,db,signInWithEmailAndPassword,signOut,onAuthStateChanged,sendPasswordResetEmail,createUserWithEmailAndPassword,doc,getDoc,setDoc,collection,getDocs,deleteDoc};
+// Segunda instancia para crear usuarios sin afectar la sesión activa
+const appSecondary=initializeApp(FB,'secondary');
+const authSecondary=getAuth(appSecondary);
+window._fb={auth,db,signInWithEmailAndPassword,signOut,onAuthStateChanged,sendPasswordResetEmail,createUserWithEmailAndPassword,doc,getDoc,setDoc,collection,getDocs,deleteDoc,authSecondary};
+
+// ── EMAILJS INIT ──────────────────────────────────────────
+emailjs.init('dRdLxzZiL34N9-Dc8'); // ← reemplaza con tu Public Key de EmailJS
+
+// ── OFFLINE / ONLINE MODE ────────────────────────────────
+// Habilitar persistencia offline de Firestore
+import{enableIndexedDbPersistence}from'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+enableIndexedDbPersistence(db).catch(err=>{
+  if(err.code==='failed-precondition'){console.warn('Offline: múltiples pestañas abiertas');}
+  else if(err.code==='unimplemented'){console.warn('Offline: navegador no soportado');}
+});
 onAuthStateChanged(auth,async user=>{
   if(user){
     try{
@@ -91,7 +106,7 @@ body{font-family:'Montserrat',sans-serif;background:var(--bg);color:var(--text);
 
 /* APP HEADER */
 .app-header{background:var(--blue-dark);border-bottom:4px solid var(--gold);position:sticky;top:0;z-index:100;}
-.app-header-inner{max-width:1400px;margin:0 auto;display:flex;align-items:center;gap:16px;padding:12px 2rem;}
+.app-header-inner{max-width:100%;margin:0 auto;display:flex;align-items:center;gap:12px;padding:10px 1.2rem;flex-wrap:wrap;}
 .header-logo{width:52px;height:52px;border-radius:50%;object-fit:cover;border:2px solid var(--gold);flex-shrink:0;}
 .header-info{flex:1;}
 .header-name{font-size:16px;font-weight:700;color:var(--gold);}
@@ -104,13 +119,13 @@ body{font-family:'Montserrat',sans-serif;background:var(--bg);color:var(--text);
 
 /* NAV TABS */
 .nav-tabs{background:var(--blue);border-bottom:2px solid rgba(255,255,255,.1);}
-.nav-tabs-inner{max-width:1400px;margin:0 auto;display:flex;padding:0 2rem;overflow-x:auto;}
+.nav-tabs-inner{max-width:100%;margin:0 auto;display:flex;padding:0 1.2rem;overflow-x:auto;}
 .nav-tab{font-size:12px;font-weight:700;font-family:inherit;padding:13px 20px;border:none;background:transparent;color:rgba(255,255,255,.6);cursor:pointer;border-bottom:3px solid transparent;white-space:nowrap;transition:all .2s;letter-spacing:.4px;text-transform:uppercase;}
 .nav-tab:hover{color:rgba(255,255,255,.9);}
 .nav-tab.active{color:#fff;border-bottom-color:var(--gold);}
 
 /* MAIN BODY */
-.app-body{max-width:1400px;margin:0 auto;padding:1.5rem 2rem 4rem;}
+.app-body{max-width:100%;margin:0 auto;padding:1.2rem 1.2rem 4rem;overflow-x:hidden;}
 
 /* PERIOD SELECTOR */
 .period-bar{display:flex;align-items:center;gap:12px;margin-bottom:1.5rem;background:#fff;border:1px solid var(--border);border-radius:var(--radius-lg);padding:12px 16px;flex-wrap:wrap;}
@@ -124,7 +139,7 @@ body{font-family:'Montserrat',sans-serif;background:var(--bg);color:var(--text);
 /* FORM CARD */
 .form-card{background:#fff;border:1px solid var(--border);border-top:3px solid var(--gold);border-radius:var(--radius-lg);padding:1.25rem;margin-bottom:1.5rem;}
 .form-card h2{font-size:11px;font-weight:700;color:var(--blue);text-transform:uppercase;letter-spacing:1px;margin-bottom:1rem;}
-.form-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(145px,1fr));gap:10px;align-items:end;}
+.form-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:8px;align-items:end;}
 .form-grid label{font-size:11px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.4px;display:flex;flex-direction:column;gap:5px;}
 .form-grid input,.form-grid select{font-size:13px;font-family:inherit;padding:8px 10px;border:1px solid var(--border);border-radius:var(--radius);background:var(--bg);color:var(--text);outline:none;}
 .form-grid input:focus,.form-grid select:focus{border-color:var(--blue);}
@@ -280,6 +295,7 @@ body{font-family:'Montserrat',sans-serif;background:var(--bg);color:var(--text);
 .section-header-f h2{font-size:13px;font-weight:700;color:#fff;text-transform:uppercase;letter-spacing:.6px;}
 .section-badge{font-size:11px;font-weight:700;background:rgba(255,255,255,.2);color:#fff;padding:2px 10px;border-radius:99px;}
 .tbl{width:100%;border-collapse:collapse;font-size:13px;}
+.tbl .right{text-align:right;}
 .tbl th{background:var(--blue-light);color:var(--blue);font-weight:700;font-size:11px;text-transform:uppercase;letter-spacing:.4px;padding:10px 14px;text-align:left;border-bottom:1px solid var(--border);}
 .tbl th.right{text-align:right;}
 .tbl td{padding:10px 14px;border-bottom:1px solid var(--border);color:var(--text);vertical-align:middle;}
@@ -315,6 +331,13 @@ body{font-family:'Montserrat',sans-serif;background:var(--bg);color:var(--text);
 .checkbox-group{display:flex;flex-direction:column;gap:8px;margin:8px 0;}
 .checkbox-item{display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer;}
 .checkbox-item input{width:16px;height:16px;cursor:pointer;}
+
+/* OFFLINE BANNER */
+#offline-banner{display:none;position:fixed;bottom:0;left:0;right:0;z-index:9999;background:#b45309;color:#fff;font-size:13px;font-weight:700;text-align:center;padding:10px 20px;letter-spacing:.3px;box-shadow:0 -2px 12px rgba(0,0,0,.3);}
+#offline-banner.show{display:flex;align-items:center;justify-content:center;gap:10px;}
+#offline-banner.online{background:#166534;}
+#sync-badge{display:none;position:fixed;bottom:48px;right:20px;z-index:9999;background:var(--gold);color:var(--blue-dark);font-size:11px;font-weight:700;padding:6px 14px;border-radius:99px;box-shadow:0 2px 10px rgba(0,0,0,.2);}
+#sync-badge.show{display:block;}
 
 /* APP FOOTER */
 .app-footer{text-align:center;padding:20px;border-top:2px solid var(--gold);background:var(--blue-dark);margin-top:40px;}
@@ -378,9 +401,11 @@ body{font-family:'Montserrat',sans-serif;background:var(--bg);color:var(--text);
   <div class="nav-tabs">
     <div class="nav-tabs-inner" id="nav-tabs-inner">
       <button class="nav-tab active" id="tab-inicio" onclick="showTab('inicio')">🏠 Inicio</button>
-      <button class="nav-tab" id="tab-trabajos" onclick="showTab('trabajos')">💰 Ingresos</button>
+      <button class="nav-tab" id="tab-trabajos" onclick="showTab('trabajos')">📋 Trabajos</button>
+      <button class="nav-tab admin-only" id="tab-ingresos" onclick="showTab('ingresos')">💰 Ingresos</button>
       <button class="nav-tab" id="tab-egresos" onclick="showTab('egresos')">💸 Egresos</button>
       <button class="nav-tab" id="tab-financiero" onclick="showTab('financiero')">🔍 Arqueo</button>
+      <button class="nav-tab admin-only" id="tab-auditoria" onclick="showTab('auditoria')">🔎 Auditoría</button>
       <button class="nav-tab admin-only" id="tab-usuarios" onclick="showTab('usuarios')">👥 Usuarios</button>
     </div>
   </div>
@@ -477,14 +502,14 @@ body{font-family:'Montserrat',sans-serif;background:var(--bg);color:var(--text);
 
     <div class="form-card admin-only">
       <h2>Registrar nuevo ingreso</h2>
-      <div class="form-grid" style="grid-template-columns:2fr 1.5fr 1fr 1fr 1fr 1fr 1.2fr 1fr auto;gap:8px;">
-        <label>Nombre del trabajo<input type="text" id="t-inp-title" placeholder="Ej: Consultoría fiscal"/></label>
-        <label>Cliente<input type="text" id="t-inp-client" placeholder="Ej: Empresa ABC"/></label>
-        <label>Fecha de inicio<input type="date" id="t-inp-start"/></label>
-        <label>Fecha límite<input type="date" id="t-inp-due"/></label>
+      <div class="form-grid" style="grid-template-columns:2fr 1.5fr 1fr 1fr 1fr 1fr 1.2fr 1fr auto;gap:8px;max-width:100%;overflow:visible;">
+        <label>Nombre del trabajo<input type="text" id="t-inp-title" placeholder="Consultoría fiscal"/></label>
+        <label>Cliente<input type="text" id="t-inp-client" placeholder="Empresa ABC"/></label>
+        <label>F. inicio<input type="date" id="t-inp-start"/></label>
+        <label>F. límite<input type="date" id="t-inp-due"/></label>
         <label>Valor ($)<input type="number" id="t-inp-valor" placeholder="0" min="0"/></label>
         <label>Abono ($)<input type="number" id="t-inp-abono" placeholder="0" min="0"/></label>
-        <label>Forma de pago<select id="t-inp-fp"><option value="">— Sin especificar —</option><option value="Efectivo">💵 Efectivo</option><option value="Transferencia">🏦 Transferencia</option></select></label>
+        <label>F. pago<select id="t-inp-fp"><option value="">— Sin especificar —</option><option value="Efectivo">💵 Efectivo</option><option value="Transferencia">🏦 Transferencia</option></select></label>
         <label>Estado<select id="t-inp-col"><option value="pending">Pendiente</option><option value="progress">En progreso</option><option value="done">Terminado</option></select></label>
         <label style="justify-content:flex-end;"><button class="btn-add" onclick="addTCard()">+ Agregar</button></label>
       </div>
@@ -558,9 +583,9 @@ body{font-family:'Montserrat',sans-serif;background:var(--bg);color:var(--text);
 
     <div class="form-card admin-only">
       <h2>Registrar nuevo egreso</h2>
-      <div class="form-grid" style="grid-template-columns:2fr 1.5fr 1.5fr 1fr 1.2fr 1.2fr 1fr auto;gap:8px;">
-        <label>Descripción<input type="text" id="e-inp-desc" placeholder="Ej: Pago arriendo"/></label>
-        <label>Proveedor<input type="text" id="e-inp-prov" placeholder="Ej: Inmobiliaria XYZ"/></label>
+      <div class="form-grid" style="grid-template-columns:2fr 1.5fr 1.5fr 1fr 1.2fr 1.2fr 1fr auto;gap:8px;max-width:100%;overflow:visible;">
+        <label>Descripción<input type="text" id="e-inp-desc" placeholder="Pago arriendo"/></label>
+        <label>Proveedor<input type="text" id="e-inp-prov" placeholder="Inmobiliaria XYZ"/></label>
         <label>Categoría<select id="e-inp-cat"><option value="Arriendo">Arriendo</option><option value="Cafetería">Cafetería</option><option value="Educación">Educación</option><option value="Honorarios">Honorarios</option><option value="Impuestos">Impuestos</option><option value="Nómina">Nómina</option><option value="Papelería">Papelería</option><option value="Publicidad">Publicidad</option><option value="Servicios públicos">Servicios públicos</option><option value="Tecnología">Tecnología</option><option value="Transporte">Transporte</option><option value="Otro">Otro</option></select></label>
         <label>Valor ($)<input type="number" id="e-inp-valor" placeholder="0" min="0"/></label>
         <label>Fecha límite<input type="date" id="e-inp-fecha"/></label>
@@ -625,6 +650,78 @@ body{font-family:'Montserrat',sans-serif;background:var(--bg);color:var(--text);
     <div class="section-f"><div class="section-header-f" style="background:var(--blue-dark);"><h2>Detalle por categoría</h2><span class="section-badge" id="badge-categorias">0</span></div><table class="tbl"><thead><tr><th>Categoría</th><th class="right">Cantidad</th><th class="right">Total</th><th class="right">Pagado</th><th class="right">Pendiente</th></tr></thead><tbody id="body-categorias"></tbody></table></div>
   </div>
 
+  <!-- TAB INGRESOS (admin only) -->
+  <div id="tab-content-ingresos" class="app-body" style="display:none;">
+    <div class="period-bar">
+      <label>Corte mensual:</label>
+      <select class="period-select" id="i-period-month" onchange="renderIngresos()">
+        <option value="">— Todos los meses —</option>
+      </select>
+      <select class="period-select" id="i-period-year" onchange="renderIngresos()">
+        <option value="">— Todos los años —</option>
+      </select>
+      <span class="period-badge" id="i-period-badge">Todos los registros</span>
+      <button class="btn-period-all" onclick="clearIPeriod()">Ver todos</button>
+    </div>
+    <div class="summary">
+      <div class="metric"><div class="metric-label">Total facturado</div><div class="metric-value" id="i-sum-valor">$0</div></div>
+      <div class="metric"><div class="metric-label">Total cobrado</div><div class="metric-value green" id="i-sum-abono">$0</div></div>
+      <div class="metric"><div class="metric-label">Saldo por cobrar</div><div class="metric-value red" id="i-sum-saldo">$0</div></div>
+    </div>
+    <div class="export-bar"><button class="btn-export" onclick="exportExcelIngresos()"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>Exportar Excel</button></div>
+    <div class="form-card" style="border-top-color:var(--green);">
+      <h2>💰 Resumen de ingresos por trabajo</h2>
+      <div id="ingresos-table-wrap">
+        <table class="tbl" style="width:100%;">
+          <thead><tr>
+            <th>#</th><th>Trabajo</th><th>Cliente</th><th>Estado</th>
+            <th>F. inicio</th><th>F. límite</th><th>F. pago</th>
+            <th class="right">Valor</th><th class="right">Abono</th><th class="right">Saldo</th>
+            <th>Registrado por</th>
+          </tr></thead>
+          <tbody id="ingresos-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB AUDITORÍA (admin only) -->
+  <div id="tab-content-auditoria" class="app-body" style="display:none;">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.5rem;flex-wrap:wrap;gap:12px;">
+      <div>
+        <h2 style="font-size:18px;font-weight:700;color:var(--blue-dark);">🔎 Auditoría de Operaciones</h2>
+        <p style="font-size:13px;color:var(--text2);margin-top:4px;">Historial completo de registros por usuario.</p>
+      </div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
+        <label style="font-size:12px;font-weight:600;color:var(--text2);">Filtrar por usuario:</label>
+        <select id="audit-filter-user" class="period-select" onchange="renderAuditoria()" style="min-width:180px;">
+          <option value="">— Todos los usuarios —</option>
+        </select>
+        <select id="audit-filter-tipo" class="period-select" onchange="renderAuditoria()">
+          <option value="">— Todos los módulos —</option>
+          <option value="trabajo">📋 Trabajos</option>
+          <option value="egreso">💸 Egresos</option>
+        </select>
+        <button class="btn-export" onclick="exportExcelAuditoria()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>Exportar</button>
+      </div>
+    </div>
+    <div class="summary">
+      <div class="metric"><div class="metric-label">Total operaciones</div><div class="metric-value" id="audit-total">0</div></div>
+      <div class="metric"><div class="metric-label">Trabajos registrados</div><div class="metric-value" id="audit-trabajos">0</div></div>
+      <div class="metric"><div class="metric-label">Egresos registrados</div><div class="metric-value" id="audit-egresos">0</div></div>
+    </div>
+    <div class="form-card">
+      <h2>Historial de operaciones</h2>
+      <table class="tbl" style="width:100%;">
+        <thead><tr>
+          <th>#</th><th>Módulo</th><th>Descripción</th><th>Valor</th>
+          <th>Estado</th><th>Fecha registro</th><th>Registrado por</th>
+        </tr></thead>
+        <tbody id="auditoria-tbody"></tbody>
+      </table>
+    </div>
+  </div>
+
   <!-- TAB USUARIOS (admin only) -->
   <div id="tab-content-usuarios" class="app-body" style="display:none;">
     <!-- Modal Crear Usuario -->
@@ -635,10 +732,11 @@ body{font-family:'Montserrat',sans-serif;background:var(--bg);color:var(--text);
         <label class="modal-label">Correo electrónico<input type="email" id="u-email" placeholder="correo@ejemplo.com"/></label>
         <label class="modal-label">Contraseña inicial<input type="password" id="u-pwd" placeholder="Mínimo 6 caracteres"/></label>
         <label class="modal-label">Rol<select id="u-rol"><option value="usuario">Usuario</option><option value="admin">Administrador</option></select></label>
+        <label class="modal-label">Cliente asignado (opcional)<input type="text" id="u-cliente" placeholder="Ej: Empresa ABC S.A.S."/></label>
         <div style="margin:8px 0 4px;font-size:11px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.4px;">Módulos permitidos</div>
         <div class="checkbox-group">
-          <label class="checkbox-item"><input type="checkbox" id="u-mod-trabajos" checked/> 📋 Tablero de Ingresos</label>
-          <label class="checkbox-item"><input type="checkbox" id="u-mod-egresos" checked/> 💸 Tablero de Egresos</label>
+          <label class="checkbox-item"><input type="checkbox" id="u-mod-trabajos" checked/> 📋 Trabajos</label>
+          <label class="checkbox-item"><input type="checkbox" id="u-mod-egresos" checked/> 💸 Egresos</label>
           <label class="checkbox-item"><input type="checkbox" id="u-mod-financiero" checked/> 📊 Arqueo de Caja</label>
         </div>
         <div class="modal-error" id="u-create-error"></div>
@@ -759,13 +857,16 @@ function showApp(perfil){
     document.body.classList.remove('is-admin');
   }
   // Show/hide tabs based on modules
-  const modulos=isAdmin()?['trabajos','egresos','financiero','usuarios']:(perfil.modulos||['trabajos','egresos','financiero']);
+  const modulos=isAdmin()?['trabajos','ingresos','egresos','financiero','auditoria','usuarios']:(perfil.modulos||['trabajos','egresos','financiero']);
   ['trabajos','egresos','financiero'].forEach(m=>{
     const tab=document.getElementById('tab-'+m);
     if(tab)tab.style.display=modulos.includes(m)?'block':'none';
   });
-  const tabU=document.getElementById('tab-usuarios');
-  if(tabU)tabU.style.display=isAdmin()?'block':'none';
+  // Tabs solo admin
+  ['ingresos','auditoria','usuarios'].forEach(m=>{
+    const tab=document.getElementById('tab-'+m);
+    if(tab)tab.style.display=isAdmin()?'block':'none';
+  });
   showScreen('app');
   // Go to first allowed tab
   const firstMod=isAdmin()?'inicio':(modulos.includes('trabajos')?'trabajos':modulos.includes('egresos')?'egresos':modulos.includes('financiero')?'financiero':'inicio');
@@ -779,7 +880,7 @@ function showApp(perfil){
 }
 
 function showTab(name){
-  ['inicio','trabajos','egresos','financiero','usuarios'].forEach(t=>{
+  ['inicio','trabajos','ingresos','egresos','financiero','auditoria','usuarios'].forEach(t=>{
     const tab=document.getElementById('tab-'+t);
     const content=document.getElementById('tab-content-'+t);
     if(tab)tab.classList.toggle('active',t===name);
@@ -788,6 +889,8 @@ function showTab(name){
   if(name==='financiero')loadFinanciero();
   if(name==='usuarios')loadUsers();
   if(name==='inicio')updateDashStats();
+  if(name==='ingresos')renderIngresos();
+  if(name==='auditoria')renderAuditoria();
 }
 
 // ============================================================
@@ -1010,7 +1113,6 @@ function renderTrabajos(){
 }
 
 function addTCard(){
-  if(!isAdmin()){alert('Solo el administrador puede agregar trabajos.');return;}
   const title=document.getElementById('t-inp-title').value.trim();
   if(!title){alert('Por favor ingresa el nombre del trabajo.');return;}
   jobCounter++;
@@ -1024,7 +1126,8 @@ function addTCard(){
     abono:document.getElementById('t-inp-abono').value,
     fp:document.getElementById('t-inp-fp').value,
     created:todayStr(),
-    doneDate:col==='done'?todayStr():null,paidDate:null
+    doneDate:col==='done'?todayStr():null,paidDate:null,
+    registradoPor:window._perfil?window._perfil.nombre||window._perfil.email:'desconocido'
   });
   ['t-inp-title','t-inp-client','t-inp-start','t-inp-due','t-inp-valor','t-inp-abono'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
   saveTrabajos();renderTrabajos();updateDashStats();populatePeriodSelectors();
@@ -1197,7 +1300,8 @@ function addEgresoCard(){
     fecha:document.getElementById('e-inp-fecha').value,
     fp:document.getElementById('e-inp-fp').value,
     col,created:todayStr(),
-    paidDate:col==='paid'?todayStr():null
+    paidDate:col==='paid'?todayStr():null,
+    registradoPor:window._perfil?window._perfil.nombre||window._perfil.email:'desconocido'
   });
   ['e-inp-desc','e-inp-prov','e-inp-valor','e-inp-fecha'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
   saveEgresos();renderEgresos();updateDashStats();populatePeriodSelectors();
@@ -1470,6 +1574,7 @@ async function createUser(){
   const email=document.getElementById('u-email').value.trim();
   const pwd=document.getElementById('u-pwd').value;
   const rol=document.getElementById('u-rol').value;
+  const cliente=document.getElementById('u-cliente').value.trim();
   const modulos=[];
   if(document.getElementById('u-mod-trabajos').checked)modulos.push('trabajos');
   if(document.getElementById('u-mod-egresos').checked)modulos.push('egresos');
@@ -1480,10 +1585,34 @@ async function createUser(){
   if(!nombre||!email||!pwd){errEl.textContent='Todos los campos son obligatorios.';return;}
   if(pwd.length<6){errEl.textContent='La contraseña debe tener al menos 6 caracteres.';return;}
   try{
-    const cred=await window._fb.createUserWithEmailAndPassword(window._fb.auth,email,pwd);
-    await window._fb.setDoc(window._fb.doc(window._fb.db,'usuarios_interno',cred.user.uid),{email,nombre,rol,modulos,createdAt:new Date().toISOString()});
-    sucEl.textContent='✓ Usuario "'+nombre+'" creado exitosamente.';
-    setTimeout(()=>{closeUCreateModal();loadUsers();},1500);
+    // Usar instancia secundaria para NO cerrar la sesión del admin
+    const cred=await window._fb.createUserWithEmailAndPassword(window._fb.authSecondary,email,pwd);
+    await window._fb.setDoc(window._fb.doc(window._fb.db,'usuarios_interno',cred.user.uid),{email,nombre,rol,modulos,cliente,createdAt:new Date().toISOString()});
+    await window._fb.signOut(window._fb.authSecondary);
+    // Enviar correo de bienvenida con EmailJS
+    try{
+      const modulosTexto=modulos.map(m=>m==='trabajos'?'📋 Tablero de Ingresos':m==='egresos'?'💸 Tablero de Egresos':'📊 Arqueo de Caja').join(', ');
+      const clienteTexto=cliente?'Se te ha asignado el manejo del cliente: <strong>'+cliente+'</strong>.':'';
+      await emailjs.send(
+        'service_2wchwje',
+        'kxma7ar',
+        {
+          to_name: nombre,
+          to_email: email,
+          password: pwd,
+          cliente: cliente||'Sin asignar',
+          cliente_texto: clienteTexto,
+          modulos: modulosTexto,
+          rol: rol==='admin'?'Administrador':'Usuario',
+          empresa: 'Asesorías y Consultorías JNF S.A.S.',
+          url_acceso: window.location.href
+        }
+      );
+    }catch(emailErr){
+      console.warn('Correo no enviado (configura EmailJS):',emailErr);
+    }
+    sucEl.textContent='✓ Usuario "'+nombre+'" creado y correo de bienvenida enviado.';
+    setTimeout(()=>{closeUCreateModal();loadUsers();},1800);
   }catch(e){
     let msg='Error: '+e.message;
     if(e.code==='auth/email-already-in-use')msg='Este correo ya está registrado.';
@@ -1555,7 +1684,194 @@ async function deleteUser(uid, nombre){
 // ============================================================
 // INIT
 // ============================================================
+
+// ============================================================
+// TAB INGRESOS (admin) — resumen de todos los trabajos
+// ============================================================
+function clearIPeriod(){
+  const ms=document.getElementById('i-period-month');
+  const ys=document.getElementById('i-period-year');
+  if(ms)ms.value='';if(ys)ys.value='';renderIngresos();
+}
+
+function renderIngresos(){
+  // Populate period selectors
+  const ms=document.getElementById('i-period-month');
+  const ys=document.getElementById('i-period-year');
+  if(ms&&ms.options.length<=1){
+    MESES.forEach((m,i)=>{const o=document.createElement('option');o.value=i+1;o.textContent=m;ms.appendChild(o);});
+  }
+  if(ys&&ys.options.length<=1){
+    const years=new Set();
+    jobs.forEach(j=>{if(j.start)years.add(j.start.split('-')[0]);if(j.created){const p=j.created.split('/');if(p[2])years.add(p[2]);}});
+    [...years].sort().forEach(y=>{const o=document.createElement('option');o.value=y;o.textContent=y;ys.appendChild(o);});
+  }
+  const selMonth=ms?parseInt(ms.value)||0:0;
+  const selYear=ys?parseInt(ys.value)||0:0;
+  let filtered=jobs.filter(j=>{
+    if(!selMonth&&!selYear)return true;
+    const d=j.start?new Date(j.start):(j.created?parseDate(j.created):null);
+    if(!d)return true;
+    if(selMonth&&d.getMonth()+1!==selMonth)return false;
+    if(selYear&&d.getFullYear()!==selYear)return false;
+    return true;
+  });
+  const badge=document.getElementById('i-period-badge');
+  if(badge)badge.textContent=filtered.length===jobs.length?'Todos los registros':filtered.length+' registros filtrados';
+  // Summary
+  let totalValor=0,totalAbono=0;
+  filtered.forEach(j=>{totalValor+=parseFloat(j.valor)||0;totalAbono+=parseFloat(j.abono)||0;});
+  const el_v=document.getElementById('i-sum-valor');const el_a=document.getElementById('i-sum-abono');const el_s=document.getElementById('i-sum-saldo');
+  if(el_v)el_v.textContent=fmtM(totalValor);
+  if(el_a)el_a.textContent=fmtM(totalAbono);
+  if(el_s)el_s.textContent=fmtM(totalValor-totalAbono);
+  // Table
+  const tbody=document.getElementById('ingresos-tbody');
+  if(!tbody)return;
+  const colNames={pending:'Pendiente',progress:'En progreso',done:'Terminado'};
+  if(!filtered.length){tbody.innerHTML='<tr><td colspan="11" style="text-align:center;color:var(--text3);padding:2rem;">Sin registros</td></tr>';return;}
+  tbody.innerHTML=filtered.map((j,i)=>{
+    const v=parseFloat(j.valor)||0,ab=parseFloat(j.abono)||0,sd=v-ab;
+    const sdColor=sd<=0?'color:var(--green);font-weight:700':'color:var(--red);font-weight:700';
+    return`<tr>
+      <td>${i+1}</td>
+      <td><strong>${j.title}</strong></td>
+      <td>${j.client||'—'}</td>
+      <td><span class="badge">${colNames[j.col]||j.col}</span></td>
+      <td>${j.start?fmt(j.start):'—'}</td>
+      <td>${j.due?fmt(j.due):'—'}</td>
+      <td>${j.fp||'—'}</td>
+      <td class="right">${fmtM(v)}</td>
+      <td class="right" style="color:var(--green);font-weight:600;">${fmtM(ab)}</td>
+      <td class="right" style="${sdColor}">${fmtM(sd)}</td>
+      <td style="font-size:12px;color:var(--text2);">${j.registradoPor||'—'}</td>
+    </tr>`;
+  }).join('');
+}
+
+function parseDate(str){
+  if(!str)return null;
+  const p=str.split('/');
+  if(p.length===3)return new Date(p[2],p[1]-1,p[0]);
+  return new Date(str);
+}
+
+function exportExcelIngresos(){
+  const rows=[['#','Trabajo','Cliente','Estado','F.Inicio','F.Límite','F.Pago','Valor','Abono','Saldo','Registrado por']];
+  jobs.forEach((j,i)=>{
+    const v=parseFloat(j.valor)||0,ab=parseFloat(j.abono)||0;
+    rows.push([i+1,j.title,j.client||'',j.col,j.start?fmt(j.start):'',j.due?fmt(j.due):'',j.fp||'',v,ab,v-ab,j.registradoPor||'']);
+  });
+  const wb=XLSX.utils.book_new();
+  const ws=XLSX.utils.aoa_to_sheet(rows);
+  XLSX.utils.book_append_sheet(wb,ws,'Ingresos');
+  XLSX.writeFile(wb,'ingresos_jnf.xlsx');
+}
+
+// ============================================================
+// TAB AUDITORÍA (admin)
+// ============================================================
+function renderAuditoria(){
+  // Poblar filtro de usuarios
+  const userSelect=document.getElementById('audit-filter-user');
+  if(userSelect&&userSelect.options.length<=1){
+    const usuarios=new Set();
+    jobs.forEach(j=>{if(j.registradoPor)usuarios.add(j.registradoPor);});
+    egresos.forEach(e=>{if(e.registradoPor)usuarios.add(e.registradoPor);});
+    [...usuarios].sort().forEach(u=>{const o=document.createElement('option');o.value=u;o.textContent=u;userSelect.appendChild(o);});
+  }
+  const filtroUser=userSelect?userSelect.value:'';
+  const filtroTipo=document.getElementById('audit-filter-tipo')?document.getElementById('audit-filter-tipo').value:'';
+
+  // Combinar trabajos y egresos
+  let ops=[];
+  jobs.forEach(j=>{
+    ops.push({tipo:'trabajo',desc:j.title+' — '+( j.client||'sin cliente'),valor:parseFloat(j.valor)||0,estado:j.col,fecha:j.created,usuario:j.registradoPor||'—'});
+  });
+  egresos.forEach(e=>{
+    ops.push({tipo:'egreso',desc:e.desc+' — '+(e.prov||'sin proveedor'),valor:parseFloat(e.valor)||0,estado:e.col,fecha:e.fecha||e.created,usuario:e.registradoPor||'—'});
+  });
+
+  // Filtrar
+  if(filtroUser)ops=ops.filter(o=>o.usuario===filtroUser);
+  if(filtroTipo)ops=ops.filter(o=>o.tipo===filtroTipo);
+
+  // Métricas
+  const el_t=document.getElementById('audit-total');
+  const el_tj=document.getElementById('audit-trabajos');
+  const el_eg=document.getElementById('audit-egresos');
+  if(el_t)el_t.textContent=ops.length;
+  if(el_tj)el_tj.textContent=ops.filter(o=>o.tipo==='trabajo').length;
+  if(el_eg)el_eg.textContent=ops.filter(o=>o.tipo==='egreso').length;
+
+  // Tabla
+  const tbody=document.getElementById('auditoria-tbody');
+  if(!tbody)return;
+  if(!ops.length){tbody.innerHTML='<tr><td colspan="7" style="text-align:center;color:var(--text3);padding:2rem;">Sin operaciones</td></tr>';return;}
+  const colNames={pending:'Pendiente',progress:'En progreso',done:'Terminado',paid:'Pagado'};
+  tbody.innerHTML=ops.map((o,i)=>`<tr>
+    <td>${i+1}</td>
+    <td><span class="badge" style="${o.tipo==='trabajo'?'background:var(--blue-light);color:var(--blue)':'background:var(--green-bg);color:var(--green)'}">${o.tipo==='trabajo'?'📋 Trabajo':'💸 Egreso'}</span></td>
+    <td>${o.desc}</td>
+    <td class="right">${fmtM(o.valor)}</td>
+    <td><span class="badge">${colNames[o.estado]||o.estado}</span></td>
+    <td>${o.fecha||'—'}</td>
+    <td style="font-weight:600;color:var(--blue-dark);">${o.usuario}</td>
+  </tr>`).join('');
+}
+
+function exportExcelAuditoria(){
+  const rows=[['#','Módulo','Descripción','Valor','Estado','Fecha','Registrado por']];
+  let ops=[];
+  jobs.forEach(j=>ops.push({tipo:'Trabajo',desc:j.title+' — '+(j.client||''),valor:parseFloat(j.valor)||0,estado:j.col,fecha:j.created,usuario:j.registradoPor||''}));
+  egresos.forEach(e=>ops.push({tipo:'Egreso',desc:e.desc+' — '+(e.prov||''),valor:parseFloat(e.valor)||0,estado:e.col,fecha:e.fecha||e.created,usuario:e.registradoPor||''}));
+  ops.forEach((o,i)=>rows.push([i+1,o.tipo,o.desc,o.valor,o.estado,o.fecha,o.usuario]));
+  const wb=XLSX.utils.book_new();
+  const ws=XLSX.utils.aoa_to_sheet(rows);
+  XLSX.utils.book_append_sheet(wb,ws,'Auditoría');
+  XLSX.writeFile(wb,'auditoria_jnf.xlsx');
+}
+
 setInterval(()=>{checkTAlerts();checkEgresosAlerts();},3600000);
+</script>
+
+<!-- OFFLINE BANNER -->
+<div id="offline-banner">
+  <span id="offline-icon">📡</span>
+  <span id="offline-text">Sin conexión — los cambios se guardarán cuando vuelva el internet</span>
+</div>
+<div id="sync-badge">⟳ Sincronizando...</div>
+
+<script>
+// ── DETECTOR ONLINE / OFFLINE ─────────────────────────────
+(function(){
+  const banner=document.getElementById('offline-banner');
+  const badge=document.getElementById('sync-badge');
+  const icon=document.getElementById('offline-icon');
+  const txt=document.getElementById('offline-text');
+
+  function setOffline(){
+    banner.className='show';
+    icon.textContent='📡';
+    txt.textContent='Sin conexión — trabajando en modo offline. Los cambios se sincronizarán al reconectarse.';
+  }
+  function setOnline(){
+    banner.className='show online';
+    icon.textContent='✅';
+    txt.textContent='Conexión restaurada — sincronizando datos...';
+    badge.className='show';
+    setTimeout(()=>{
+      banner.className='';
+      badge.className='';
+    },3500);
+  }
+
+  window.addEventListener('offline', setOffline);
+  window.addEventListener('online',  setOnline);
+
+  // Estado inicial
+  if(!navigator.onLine) setOffline();
+})();
 </script>
 </body>
 </html>
