@@ -38,10 +38,10 @@ onAuthStateChanged(auth,async user=>{
     try{
       let snap=await getDoc(doc(db,'usuarios_interno',user.uid));
       if(!snap.exists()){
-        const snapOld=await getDoc(doc(db,'usuarios',user.uid));
-        if(snapOld.exists()){
-          const data=snapOld.data();
-          await setDoc(doc(db,'usuarios_interno',user.uid),data);
+        // Si es el admin principal, crear perfil automáticamente
+        if(user.email==='asesoriasyconsultoriasjnfsas@gmail.com'){
+          const adminPerfil={email:user.email,nombre:'Administrador JNF',rol:'admin',modulos:['inicio','trabajos','ingresos','egresos','financiero','auditoria','usuarios'],createdAt:new Date().toISOString()};
+          await setDoc(doc(db,'usuarios_interno',user.uid),adminPerfil);
           snap=await getDoc(doc(db,'usuarios_interno',user.uid));
         }
       }
@@ -421,7 +421,11 @@ body{font-family:'Montserrat',sans-serif;background:var(--bg);color:var(--text);
         <div class="header-sub">Sistema de Gestión Interna</div>
       </div>
       <div class="nit-badge">NIT: 901.904.435-9</div>
-      <div class="header-user"><strong id="hdr-nombre">—</strong><span id="hdr-rol">—</span></div>
+      <div class="header-user" style="cursor:pointer;" onclick="openEditNombreModal()" title="Editar mi nombre">
+        <strong id="hdr-nombre">—</strong>
+        <span id="hdr-rol">—</span>
+        <span style="font-size:10px;color:rgba(255,255,255,0.4);display:block;">✏ Editar nombre</span>
+      </div>
       <button class="btn-logout" onclick="doLogout()">Cerrar sesión</button>
     </div>
   </div>
@@ -804,6 +808,21 @@ body{font-family:'Montserrat',sans-serif;background:var(--bg);color:var(--text);
     <div id="users-list"></div>
   </div>
 
+  <!-- Modal editar mi nombre -->
+  <div class="modal-overlay" id="modal-edit-nombre">
+    <div class="modal blue-top" style="width:380px;">
+      <h3>✏ Editar mi nombre</h3>
+      <p style="font-size:13px;color:var(--text2);margin-bottom:16px;">Este nombre aparecerá en el encabezado y en los registros de auditoría.</p>
+      <label class="modal-label">Mi nombre<input type="text" id="inp-edit-nombre" placeholder="Ej: Javier Niebles"/></label>
+      <div class="modal-error" id="edit-nombre-error"></div>
+      <div class="modal-success" id="edit-nombre-success"></div>
+      <div class="modal-actions">
+        <button class="btn-cancel" onclick="closeEditNombreModal()">Cancelar</button>
+        <button class="btn-primary" onclick="saveEditNombre()">Guardar</button>
+      </div>
+    </div>
+  </div>
+
   <div class="app-footer"><p>© 2026 Asesorías y Consultorías JNF S.A.S. · Todos los derechos reservados</p></div>
 </div>
 
@@ -850,7 +869,7 @@ function splashEnter(){
 // ============================================================
 // AUTH
 // ============================================================
-const ADMIN_EMAIL='janf1485@gmail.com'; // email del admin principal
+const ADMIN_EMAIL='asesoriasyconsultoriasjnfsas@gmail.com'; // email del admin principal
 
 async function doLogin(){
   const email=document.getElementById('login-email').value.trim();
@@ -1891,6 +1910,39 @@ function exportExcelAuditoria(){
   const ws=XLSX.utils.aoa_to_sheet(rows);
   XLSX.utils.book_append_sheet(wb,ws,'Auditoría');
   XLSX.writeFile(wb,'auditoria_jnf.xlsx');
+}
+
+
+// ============================================================
+// EDITAR MI NOMBRE
+// ============================================================
+function openEditNombreModal(){
+  document.getElementById('inp-edit-nombre').value=window._perfil?window._perfil.nombre||'':'';
+  document.getElementById('edit-nombre-error').textContent='';
+  document.getElementById('edit-nombre-success').textContent='';
+  document.getElementById('modal-edit-nombre').classList.add('active');
+}
+function closeEditNombreModal(){
+  document.getElementById('modal-edit-nombre').classList.remove('active');
+}
+async function saveEditNombre(){
+  const nombre=document.getElementById('inp-edit-nombre').value.trim();
+  const errEl=document.getElementById('edit-nombre-error');
+  const sucEl=document.getElementById('edit-nombre-success');
+  errEl.textContent='';sucEl.textContent='';
+  if(!nombre){errEl.textContent='Por favor ingresa tu nombre.';return;}
+  try{
+    const uid=window._currentUser.uid;
+    const snap=await window._fb.getDoc(window._fb.doc(window._fb.db,'usuarios_interno',uid));
+    const existing=snap.exists()?snap.data():{};
+    await window._fb.setDoc(window._fb.doc(window._fb.db,'usuarios_interno',uid),{...existing,nombre});
+    window._perfil.nombre=nombre;
+    document.getElementById('hdr-nombre').textContent=nombre;
+    sucEl.textContent='✓ Nombre actualizado correctamente.';
+    setTimeout(()=>closeEditNombreModal(),1200);
+  }catch(e){
+    errEl.textContent='Error: '+e.message;
+  }
 }
 
 setInterval(()=>{checkTAlerts();checkEgresosAlerts();},3600000);
