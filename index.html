@@ -391,7 +391,27 @@ body{font-family:'Montserrat',sans-serif;background:var(--bg);color:var(--text);
   <div class="splash-logo-wrap"><img class="splash-logo" id="splash-logo" src="" alt="JNF"/></div>
   <div class="splash-name">Asesorías y Consultorías JNF S.A.S.</div>
   <div class="splash-sub">Sistema de Gestión Interna</div>
-  <div class="splash-pulse"></div>
+  <!-- Átomo online/offline en el splash -->
+  <div id="splash-atom-indicator" style="display:flex;flex-direction:column;align-items:center;gap:2px;">
+    <div id="splash-atom-wrap" class="online-anim" style="position:relative;width:43px;height:43px;display:flex;align-items:center;justify-content:center;">
+      <svg id="splash-atom-svg" viewBox="0 0 86 86" width="43" height="43" style="position:absolute;pointer-events:none;">
+        <ellipse cx="43" cy="43" rx="40" ry="16" fill="none" stroke="#c9a227" stroke-width="2" transform="rotate(0 43 43)"/>
+        <ellipse cx="43" cy="43" rx="40" ry="16" fill="none" stroke="#c9a227" stroke-width="2" transform="rotate(60 43 43)"/>
+        <ellipse cx="43" cy="43" rx="40" ry="16" fill="none" stroke="#c9a227" stroke-width="2" transform="rotate(120 43 43)"/>
+        <circle cx="83" cy="43" r="5" fill="#c9a227">
+          <animateTransform attributeName="transform" type="rotate" from="0 43 43" to="360 43 43" dur="2s" repeatCount="indefinite"/>
+        </circle>
+        <circle cx="83" cy="43" r="5" fill="#ffe066">
+          <animateTransform attributeName="transform" type="rotate" from="120 43 43" to="480 43 43" dur="3s" repeatCount="indefinite"/>
+        </circle>
+        <circle cx="83" cy="43" r="5" fill="#c9a227">
+          <animateTransform attributeName="transform" type="rotate" from="240 43 43" to="600 43 43" dur="2.5s" repeatCount="indefinite"/>
+        </circle>
+      </svg>
+      <div id="splash-atom-nucleus" style="width:11px;height:11px;border-radius:50%;background:radial-gradient(circle at 35% 35%,#4a7fe5,#1a2580);border:1.5px solid #c9a227;position:absolute;z-index:10;animation:pulseBlueA 1.5s infinite;"></div>
+    </div>
+    <div id="splash-atom-label" style="font-size:7px;font-weight:800;letter-spacing:1px;color:#c9a227;font-family:'Montserrat',sans-serif;animation:neonGoldA 2.5s infinite;">EN LÍNEA</div>
+  </div>
   <div class="splash-footer">© 2026 Asesorías y Consultorías JNF S.A.S. · Todos los derechos reservados</div>
 </div>
 
@@ -2055,6 +2075,29 @@ setInterval(()=>{checkTAlerts();checkEgresosAlerts();},3600000);
     els.forEach((id,i)=>{const el=document.getElementById(id);if(el)el.setAttribute('fill',colors[i]);});
   }
 
+  function setSplashAtom(online){
+    var sw = document.getElementById('splash-atom-wrap');
+    var sn = document.getElementById('splash-atom-nucleus');
+    var sl = document.getElementById('splash-atom-label');
+    var ss = document.getElementById('splash-atom-svg');
+    if(!sw||!sn||!sl) return;
+    if(ss){
+      ss.querySelectorAll('ellipse').forEach(function(el){
+        el.setAttribute('stroke', online ? '#c9a227' : '#ef4444');
+      });
+      ss.querySelectorAll('circle').forEach(function(el,i){
+        el.setAttribute('fill', online ? (i===1?'#ffe066':'#c9a227') : (i===1?'#f87171':'#ef4444'));
+      });
+    }
+    sw.className = online ? 'online-anim' : 'offline-anim';
+    sn.className = online ? '' : 'offline';
+    sn.style.background = online ? 'radial-gradient(circle at 35% 35%,#4a7fe5,#1a2580)' : '';
+    sn.style.borderColor = online ? '#c9a227' : '';
+    sl.style.color = online ? '#c9a227' : '#ef4444';
+    sl.className = online ? '' : 'offline';
+    sl.textContent = online ? 'EN LÍNEA' : 'SIN SEÑAL';
+  }
+
   function setOffline(){
     indicator.className = 'show';
     nucleus.className   = 'offline';
@@ -2062,6 +2105,7 @@ setInterval(()=>{checkTAlerts();checkEgresosAlerts();},3600000);
     atomWrap.className  = 'offline-anim';
     label.textContent   = 'SIN SEÑAL';
     setAtomColor(false);
+    setSplashAtom(false);
   }
 
   function setOnline(){
@@ -2071,6 +2115,7 @@ setInterval(()=>{checkTAlerts();checkEgresosAlerts();},3600000);
     atomWrap.className  = 'online-anim';
     label.textContent   = 'EN LÍNEA';
     setAtomColor(true);
+    setSplashAtom(true);
   }
 
   window.addEventListener('offline', setOffline);
