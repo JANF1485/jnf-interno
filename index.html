@@ -11,7 +11,7 @@
 <script type="module">
 import{initializeApp}from'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
 import{getAuth,signInWithEmailAndPassword,signOut,onAuthStateChanged,sendPasswordResetEmail,createUserWithEmailAndPassword}from'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
-import{getFirestore,doc,getDoc,setDoc,collection,getDocs,deleteDoc}from'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+import{getFirestore,doc,getDoc,setDoc,collection,getDocs,deleteDoc,onSnapshot,writeBatch,serverTimestamp}from'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 const FB={apiKey:"AIzaSyBqy7hw4RAS_zVj5KIkHBqeMfmhfEz7CJ8",authDomain:"jnf-interno.firebaseapp.com",projectId:"jnf-interno",storageBucket:"jnf-interno.firebasestorage.app",messagingSenderId:"969639335061",appId:"1:969639335061:web:e659b6a230f2cd5dd4b79c"};
 const app=initializeApp(FB,'main');
 const auth=getAuth(app);
@@ -19,7 +19,7 @@ const db=getFirestore(app);
 // Segunda instancia para crear usuarios sin afectar la sesión activa
 const appSecondary=initializeApp(FB,'secondary');
 const authSecondary=getAuth(appSecondary);
-window._fb={auth,db,signInWithEmailAndPassword,signOut,onAuthStateChanged,sendPasswordResetEmail,createUserWithEmailAndPassword,doc,getDoc,setDoc,collection,getDocs,deleteDoc,authSecondary};
+window._fb={auth,db,signInWithEmailAndPassword,signOut,onAuthStateChanged,sendPasswordResetEmail,createUserWithEmailAndPassword,doc,getDoc,setDoc,collection,getDocs,deleteDoc,onSnapshot,writeBatch,serverTimestamp,authSecondary};
 
 // ── EMAILJS INIT ──────────────────────────────────────────
 // EmailJS se inicializa en DOMContentLoaded
@@ -944,6 +944,9 @@ async function doLogout(){
 function isAdmin(){return window._perfil&&(window._perfil.rol==='admin'||window._perfil.email===ADMIN_EMAIL);}
 
 function showApp(perfil){
+  // Iniciar listeners en tiempo real de Firestore
+  if(!_trabajosListener) initTrabajosListener();
+  if(!_egresosListener) initEgresosListener();
   document.getElementById('hdr-nombre').textContent=perfil.nombre||perfil.email;
   document.getElementById('hdr-rol').textContent=isAdmin()?'Administrador':'Usuario';
   document.getElementById('welcome-msg').textContent='Bienvenido, '+(perfil.nombre||perfil.email).split(' ')[0]+'!';
@@ -1149,9 +1152,50 @@ const T_COL_NAMES={pending:'Pendiente',progress:'En progreso',done:'Terminado'};
 const T_NEXT={pending:'En progreso',progress:'Terminado',done:null};
 const T_PREV={pending:null,progress:'Pendiente',done:'En progreso'};
 let jobs=[],tPendingDelId=null,tPendingPayId=null,tPendingEditId=null,jobCounter=0;
-try{const s=JSON.parse(localStorage.getItem('jnf_board_v4')||'{}');jobs=s.jobs||[];jobCounter=s.counter||0;}catch(e){}
+let _trabajosListener=null;
 
-function saveTrabajos(){try{localStorage.setItem('jnf_board_v4',JSON.stringify({jobs,counter:jobCounter}));}catch(e){}}
+// ── Guardar trabajo individual en Firestore ──
+async function saveTrabajos(){
+  // Guardar el contador global
+  try{
+    const {db,doc,setDoc}=window._fb;
+    await setDoc(doc(db,'config_interno','trabajos'),{counter:jobCounter},{merge:true});
+  }catch(e){console.warn('[JNF] saveTrabajos counter:',e);}
+}
+
+// ── Guardar un trabajo específico en Firestore ──
+async function saveJob(job){
+  try{
+    const {db,doc,setDoc}=window._fb;
+    await setDoc(doc(db,'trabajos_interno',job.id),job);
+  }catch(e){console.warn('[JNF] saveJob:',e);}
+}
+
+// ── Eliminar un trabajo de Firestore ──
+async function deleteJob(id){
+  try{
+    const {db,doc,deleteDoc}=window._fb;
+    await deleteDoc(doc(db,'trabajos_interno',id));
+  }catch(e){console.warn('[JNF] deleteJob:',e);}
+}
+
+// ── Listener en tiempo real para trabajos ──
+function initTrabajosListener(){
+  if(_trabajosListener) _trabajosListener();
+  const {db,collection,onSnapshot,doc,getDoc}=window._fb;
+  // Cargar contador
+  getDoc(doc(db,'config_interno','trabajos')).then(snap=>{
+    if(snap.exists()) jobCounter=snap.data().counter||0;
+  });
+  // Listener en tiempo real
+  _trabajosListener=onSnapshot(collection(db,'trabajos_interno'),snap=>{
+    jobs=[];
+    snap.forEach(d=>jobs.push(d.data()));
+    jobs.sort((a,b)=>(a.num||0)-(b.num||0));
+    renderTrabajos();updateDashStats();populatePeriodSelectors();
+    checkTAlerts();
+  },err=>console.warn('[JNF] trabajos listener:',err));
+}
 
 function checkTAlerts(){
   const t=new Date();t.setHours(0,0,0,0);
@@ -1246,7 +1290,10 @@ function addTCard(){
     registradoPor:window._perfil?window._perfil.nombre||window._perfil.email:'desconocido'
   });
   ['t-inp-title','t-inp-client','t-inp-start','t-inp-due','t-inp-valor','t-inp-abono'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
-  saveTrabajos();renderTrabajos();updateDashStats();populatePeriodSelectors();
+  const nuevoJob=jobs[jobs.length-1];
+  saveTrabajos();
+  saveJob(nuevoJob);
+  // No llamar renderTrabajos() — el listener lo hará automáticamente
 }
 
 function askTPago(id){
@@ -1260,10 +1307,10 @@ function closeTPayModal(){tPendingPayId=null;document.getElementById('t-modal-pa
 function confirmTPago(){
   const j=jobs.find(x=>x.id===tPendingPayId);if(!j)return;
   j.abono=parseFloat(j.valor)||0;j.paidDate=todayStr();j.fp=document.getElementById('t-modal-pay-fp').value;
-  closeTPayModal();saveTrabajos();renderTrabajos();updateDashStats();
+  const jp=jobs.find(x=>x.id===tPendingPayId); closeTPayModal(); if(jp) saveJob(jp);
 }
-function moveTNext(id){const j=jobs.find(x=>x.id===id);if(!j)return;const i=T_COLS.indexOf(j.col);if(i<T_COLS.length-1){j.col=T_COLS[i+1];if(j.col==='done')j.doneDate=todayStr();saveTrabajos();renderTrabajos();}}
-function moveTBack(id){const j=jobs.find(x=>x.id===id);if(!j)return;const i=T_COLS.indexOf(j.col);if(i>0){j.col=T_COLS[i-1];if(j.col!=='done')j.doneDate=null;saveTrabajos();renderTrabajos();}}
+function moveTNext(id){const j=jobs.find(x=>x.id===id);if(!j)return;const i=T_COLS.indexOf(j.col);if(i<T_COLS.length-1){j.col=T_COLS[i+1];if(j.col==='done')j.doneDate=todayStr();saveJob(j);}}
+function moveTBack(id){const j=jobs.find(x=>x.id===id);if(!j)return;const i=T_COLS.indexOf(j.col);if(i>0){j.col=T_COLS[i-1];if(j.col!=='done')j.doneDate=null;saveJob(j);}}
 
 function askTDel(id,name){
   if(!isAdmin()){alert('Solo el administrador puede eliminar trabajos.');return;}
@@ -1278,7 +1325,7 @@ function askTDel(id,name){
 function closeTModal(){tPendingDelId=null;document.getElementById('t-modal-overlay').classList.remove('active');}
 function confirmTDel(){
   if(document.getElementById('t-modal-pwd').value!==DEL_PWD){document.getElementById('t-modal-error').textContent='Contraseña incorrecta.';document.getElementById('t-modal-pwd').value='';return;}
-  jobs=jobs.filter(x=>x.id!==tPendingDelId);closeTModal();saveTrabajos();renderTrabajos();updateDashStats();
+  const dId=tPendingDelId; jobs=jobs.filter(x=>x.id!==dId); closeTModal(); deleteJob(dId);
 }
 
 function openTEditModal(id){
@@ -1312,7 +1359,7 @@ function confirmTEdit(){
   if(newCol==='done'&&!j.doneDate)j.doneDate=todayStr();
   if(newCol!=='done')j.doneDate=null;
   j.col=newCol;
-  closeTEditModal();saveTrabajos();renderTrabajos();updateDashStats();
+  const jedit=jobs.find(x=>x.id===tPendingEditId); closeTEditModal(); if(jedit) saveJob(jedit);
 }
 
 function exportExcelTrabajos(){
@@ -1334,8 +1381,47 @@ function exportExcelTrabajos(){
 // EGRESOS
 // ============================================================
 let egresos=[],ePendingDelId=null,ePendingPayId=null,ePendingEditId=null,eCounter=0;
-try{const s=JSON.parse(localStorage.getItem('jnf_egresos_v2')||'{}');egresos=s.egresos||[];eCounter=s.counter||0;}catch(e){}
-function saveEgresos(){try{localStorage.setItem('jnf_egresos_v2',JSON.stringify({egresos,counter:eCounter}));}catch(e){}}
+let _egresosListener=null;
+
+// ── Guardar egreso individual en Firestore ──
+async function saveEgresos(){
+  try{
+    const {db,doc,setDoc}=window._fb;
+    await setDoc(doc(db,'config_interno','egresos'),{counter:eCounter},{merge:true});
+  }catch(e){console.warn('[JNF] saveEgresos counter:',e);}
+}
+
+// ── Guardar un egreso específico en Firestore ──
+async function saveEgreso(egreso){
+  try{
+    const {db,doc,setDoc}=window._fb;
+    await setDoc(doc(db,'egresos_interno',egreso.id),egreso);
+  }catch(e){console.warn('[JNF] saveEgreso:',e);}
+}
+
+// ── Eliminar un egreso de Firestore ──
+async function deleteEgresoFS(id){
+  try{
+    const {db,doc,deleteDoc}=window._fb;
+    await deleteDoc(doc(db,'egresos_interno',id));
+  }catch(e){console.warn('[JNF] deleteEgresoFS:',e);}
+}
+
+// ── Listener en tiempo real para egresos ──
+function initEgresosListener(){
+  if(_egresosListener) _egresosListener();
+  const {db,collection,onSnapshot,doc,getDoc}=window._fb;
+  getDoc(doc(db,'config_interno','egresos')).then(snap=>{
+    if(snap.exists()) eCounter=snap.data().counter||0;
+  });
+  _egresosListener=onSnapshot(collection(db,'egresos_interno'),snap=>{
+    egresos=[];
+    snap.forEach(d=>egresos.push(d.data()));
+    egresos.sort((a,b)=>(a.num||0)-(b.num||0));
+    renderEgresos();updateDashStats();populatePeriodSelectors();
+    checkEgresosAlerts();
+  },err=>console.warn('[JNF] egresos listener:',err));
+}
 
 function checkEgresosAlerts(){
   const t=new Date();t.setHours(0,0,0,0);
@@ -1420,7 +1506,9 @@ function addEgresoCard(){
     registradoPor:window._perfil?window._perfil.nombre||window._perfil.email:'desconocido'
   });
   ['e-inp-desc','e-inp-prov','e-inp-valor','e-inp-fecha'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
-  saveEgresos();renderEgresos();updateDashStats();populatePeriodSelectors();
+  const nuevoEgr=egresos[egresos.length-1];
+  saveEgresos();
+  saveEgreso(nuevoEgr);
 }
 
 function askPagoEgr(id){
@@ -1434,9 +1522,9 @@ function closePayModalEgr(){ePendingPayId=null;document.getElementById('e-modal-
 function confirmPagoEgr(){
   const e=egresos.find(x=>x.id===ePendingPayId);if(!e)return;
   e.col='paid';e.paidDate=todayStr();e.fp=document.getElementById('e-modal-pay-fp').value;
-  closePayModalEgr();saveEgresos();renderEgresos();updateDashStats();
+  const ep=egresos.find(x=>x.id===ePendingPayId); closePayModalEgr(); if(ep) saveEgreso(ep);
 }
-function moverPendienteEgr(id){const e=egresos.find(x=>x.id===id);if(!e)return;e.col='pending';e.paidDate=null;saveEgresos();renderEgresos();}
+function moverPendienteEgr(id){const e=egresos.find(x=>x.id===id);if(!e)return;e.col='pending';e.paidDate=null;saveEgreso(e);}
 
 function askDelEgr(id,name){
   if(!isAdmin()){alert('Solo el administrador puede eliminar egresos.');return;}
@@ -1451,7 +1539,7 @@ function askDelEgr(id,name){
 function closeModalEgr(){ePendingDelId=null;document.getElementById('e-modal-overlay').classList.remove('active');}
 function confirmDelEgr(){
   if(document.getElementById('e-modal-pwd').value!==DEL_PWD){document.getElementById('e-modal-error').textContent='Contraseña incorrecta.';document.getElementById('e-modal-pwd').value='';return;}
-  egresos=egresos.filter(x=>x.id!==ePendingDelId);closeModalEgr();saveEgresos();renderEgresos();updateDashStats();
+  const dEId=ePendingDelId; egresos=egresos.filter(x=>x.id!==dEId); closeModalEgr(); deleteEgresoFS(dEId);
 }
 
 function openEEditModal(id){
@@ -1478,7 +1566,7 @@ function confirmEEdit(){
   e.valor=document.getElementById('ee-valor').value;
   e.fecha=document.getElementById('ee-fecha').value;
   e.fp=document.getElementById('ee-fp').value;
-  closeEEditModal();saveEgresos();renderEgresos();updateDashStats();
+  const eedit=egresos.find(x=>x.id===ePendingEditId); closeEEditModal(); if(eedit) saveEgreso(eedit);
 }
 
 function exportExcelEgresos(){
