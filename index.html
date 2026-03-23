@@ -3195,16 +3195,7 @@ window._calMasivoRegenerarTodos = window.calMasivoRegenerarTodos = async functio
   </div>
 </div>
 
-<script>window.addEventListener("load", function(){
-  // Always show splash on fresh page load
-  document.getElementById("screen-splash").style.display="flex";
-  document.getElementById("screen-login").style.display="none";
-  var app = document.getElementById("screen-app");
-  if(app) app.style.display="none";
-  // Mark that we need to go through splash
-  sessionStorage.removeItem('splashSeen');
-  initFirebase();
-});
+<script>// [initFirebase ya se llama en el script principal]
 // ════════════════════════════════════════════════════
 // F300 IVA MODULE
 // ════════════════════════════════════════════════════
@@ -3433,6 +3424,7 @@ function sumPivot(sheetName, meses){
 }
 
 function f300_procesar(){
+  try{
   if(!f300_wb){f300_ss('Carga primero el archivo Excel','err');return;}
   const anio=document.getElementById('f300-anio').value;
   const tipo=document.getElementById('f300-periodicidad').value;
@@ -3568,6 +3560,10 @@ function f300_procesar(){
   f300_ss('Formulario 300 liquidado correctamente ✓','ok');
   try{var _k='jnf_f300_'+activeClientId+'_'+f300_anio+'_'+f300_pCod;
   if(window.fbSaveResult)window.fbSaveResult(_k,window._f300Data);}catch(e){}
+  }catch(e){
+    f300_ss('Error al liquidar: '+e.message,'err');
+    console.error('[F300]',e);
+  }
 }
 
 async function f300_descargarPDF(){
