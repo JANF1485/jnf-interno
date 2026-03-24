@@ -91,6 +91,9 @@ onAuthStateChanged(auth,async user=>{
 body{font-family:'Montserrat',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;}
 .screen{display:none;}
 .screen.active{display:block;}
+#screen-splash.screen.active{display:flex!important;}
+#screen-login.screen.active{display:flex!important;}
+#screen-app.screen.active{display:block!important;}
 
 /* SPLASH */
 #screen-splash{display:flex;align-items:center;justify-content:center;min-height:100vh;background:var(--blue-dark);flex-direction:column;gap:24px;cursor:pointer;}
@@ -388,7 +391,7 @@ body{font-family:'Montserrat',sans-serif;background:var(--bg);color:var(--text);
 
 <!-- SPLASH -->
 <div id="screen-splash" class="screen active" onclick="splashEnter()">
-  <div class="splash-logo-wrap"><img class="splash-logo" id="splash-logo" src="" alt="JNF"/></div>
+  <div class="splash-logo-wrap"><img class="splash-logo" id="splash-logo" src="https://janf1485.github.io/jnf-interno/logo.jpg" alt="JNF"/></div>
   <div class="splash-name">Asesorías y Consultorías JNF S.A.S.</div>
   <div class="splash-sub">Sistema de Gestión Interna</div>
   <!-- Átomo online/offline en el splash -->
