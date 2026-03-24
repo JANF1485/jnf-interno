@@ -2125,12 +2125,19 @@ async function readRUT(file){
 
 function rutParseJSON(text){
   if(!text) return null;
-  // Limpiar el texto de todo lo que no sea JSON
-  var clean = text
-    .replace(/```json/gi, '')
-    .replace(/```/g, '')
-    .replace(/^[\s\S]*?(?=\{)/, '')  // quitar todo antes del primer {
-    .trim();
+  // Limpiar marcadores de markdown manualmente
+  var clean = text;
+  // Quitar ```json y ``` de cualquier forma
+  // Quitar ```json y ``` — construir el patron sin backtick literal
+  var bt = String.fromCharCode(96); // backtick `
+  var mdJson = bt+bt+bt+'json';
+  var md = bt+bt+bt;
+  while(clean.indexOf(mdJson) >= 0) clean = clean.split(mdJson).join('');
+  while(clean.indexOf(md) >= 0) clean = clean.split(md).join('');
+  // Quitar todo lo que esté antes del primer {
+  var firstBrace = clean.indexOf('{');
+  if(firstBrace > 0) clean = clean.slice(firstBrace);
+  clean = clean.trim();
 
   // Intentos de parse en orden de confianza
   var intentos = [];
