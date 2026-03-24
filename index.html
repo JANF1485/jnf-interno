@@ -1114,6 +1114,8 @@ function showApp(perfil){
   checkTAlerts();
   checkEgresosAlerts();
   populatePeriodSelectors();
+  // Cargar encargados siempre al iniciar para poblar el dropdown en formulario de trabajos
+  loadEncargados();
 }
 
 function showTab(name){
@@ -1125,6 +1127,7 @@ function showTab(name){
   });
   if(name==='financiero')loadFinanciero();
   if(name==='encargados'){ loadEncargados(); }
+  if(name==='trabajos'){ populateAllEncSelects(); }
   if(name==='usuarios')loadUsers();
   if(name==='inicio')updateDashStats();
   if(name==='ingresos')renderIngresos();
@@ -1311,7 +1314,7 @@ function initTrabajosListener(){
     jobs=[];
     snap.forEach(d=>jobs.push(d.data()));
     jobs.sort((a,b)=>(a.num||0)-(b.num||0));
-    renderTrabajos();updateDashStats();populatePeriodSelectors();updatePersonaFilter();renderEncargados();
+    renderTrabajos();updateDashStats();populatePeriodSelectors();updatePersonaFilter();renderEncargados();populateAllEncSelects();
     checkTAlerts();
   },err=>console.warn('[JNF] trabajos listener:',err));
 }
@@ -2252,15 +2255,20 @@ let encargados = [];   // [{id, nombre, cargo, email, tel}]
 let encPendingEditId = null;
 
 // ── Firestore: cargar encargados ─────────────────────────
-async function loadEncargados(){
+let _encargadosListener = null;
+
+function loadEncargados(){
+  // Usar onSnapshot para mantener encargados siempre actualizados en tiempo real
+  if(_encargadosListener) return; // ya está escuchando
   try{
-    const {db, collection, getDocs} = window._fb;
-    const snap = await getDocs(collection(db,'encargados_interno'));
-    encargados = [];
-    snap.forEach(d => encargados.push(Object.assign({id:d.id}, d.data())));
-    encargados.sort((a,b)=>(a.nombre||'').localeCompare(b.nombre||''));
-    populateAllEncSelects();
-    renderEncargados();
+    const {db, collection, onSnapshot} = window._fb;
+    _encargadosListener = onSnapshot(collection(db,'encargados_interno'), snap => {
+      encargados = [];
+      snap.forEach(d => encargados.push(Object.assign({id:d.id}, d.data())));
+      encargados.sort((a,b)=>(a.nombre||'').localeCompare(b.nombre||''));
+      populateAllEncSelects();
+      renderEncargados();
+    }, e => console.warn('[ENC] listener error:', e));
   }catch(e){ console.warn('[ENC] loadEncargados:', e); }
 }
 
