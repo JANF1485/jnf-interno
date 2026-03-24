@@ -4046,10 +4046,17 @@ window.f300_verVersion = function(key){
 
 window.f300_eliminarVersion = function(key){
   pedirConfirmPwd('¿Eliminar esta versión del F300? Esta acción no se puede deshacer.', function(){
+    console.log('[F300] Eliminando versión:', key);
     db.collection('resultados_historico').doc(key).delete().then(function(){
+      console.log('[F300] Eliminado OK');
       ss('Versión F300 eliminada','ok');
       audRegistrar('Eliminar','F300',activeClientId,(clients.find(function(x){return x.id===activeClientId;})||{}).razon||'','Versión eliminada desde Archivo de Reportes');
-      if(window._openGuardado) window._openGuardado();
+      var c = clients.find(function(x){return x.id===activeClientId;});
+      var yr = activeYear||new Date().getFullYear();
+      if(c) cargarArchivo(c.id, yr);
+    }).catch(function(e){
+      console.error('[F300] Error eliminando:', e);
+      ss('Error al eliminar: '+e.message,'err');
     });
   });
 };
@@ -4520,20 +4527,53 @@ window.confirmarConPwd = function(){
   if(btnEl){ btnEl.disabled=true; btnEl.textContent='Verificando…'; }
   if(errEl) errEl.style.display='none';
 
-  var credential = firebase.auth.EmailAuthProvider.credential(currentUser.email, pwd);
-  currentUser.reauthenticateWithCredential(credential).then(function(){
-    cerrarConfirmPwd();
-    if(typeof _confirmPwdCallback === 'function') _confirmPwdCallback();
-  }).catch(function(e){
+  // Verificar que EmailAuthProvider esté disponible
+  var AuthProvider = null;
+  try {
+    if(firebase && firebase.auth && firebase.auth.EmailAuthProvider){
+      AuthProvider = firebase.auth.EmailAuthProvider;
+    }
+  } catch(ex){ console.warn('[PWD] EmailAuthProvider no disponible:', ex); }
+
+  if(!AuthProvider){
+    // Fallback: verificar contraseña con signInWithEmailAndPassword
+    firebase.auth().signInWithEmailAndPassword(currentUser.email, pwd)
+      .then(function(){
+        cerrarConfirmPwd();
+        if(typeof _confirmPwdCallback === 'function') _confirmPwdCallback();
+      }).catch(function(e){
+        if(btnEl){ btnEl.disabled=false; btnEl.textContent='Confirmar eliminación'; }
+        var msgs = {
+          'auth/wrong-password':     'Contraseña incorrecta. Intenta de nuevo.',
+          'auth/invalid-credential': 'Contraseña incorrecta. Intenta de nuevo.',
+          'auth/too-many-requests':  'Demasiados intentos. Espera un momento.',
+        };
+        if(errEl){ errEl.textContent=msgs[e.code]||'Error: '+e.message; errEl.style.display='block'; }
+      });
+    return;
+  }
+
+  try {
+    var credential = AuthProvider.credential(currentUser.email, pwd);
+    currentUser.reauthenticateWithCredential(credential).then(function(){
+      cerrarConfirmPwd();
+      if(typeof _confirmPwdCallback === 'function') _confirmPwdCallback();
+    }).catch(function(e){
+      if(btnEl){ btnEl.disabled=false; btnEl.textContent='Confirmar eliminación'; }
+      var msgs = {
+        'auth/wrong-password':      'Contraseña incorrecta. Intenta de nuevo.',
+        'auth/invalid-credential':  'Contraseña incorrecta. Intenta de nuevo.',
+        'auth/too-many-requests':   'Demasiados intentos. Espera un momento.',
+      };
+      var msg = msgs[e.code] || 'Error al verificar: '+e.message;
+      console.error('[PWD] Error reauth:', e.code, e.message);
+      if(errEl){ errEl.textContent=msg; errEl.style.display='block'; }
+    });
+  } catch(ex) {
+    console.error('[PWD] Error creando credential:', ex);
     if(btnEl){ btnEl.disabled=false; btnEl.textContent='Confirmar eliminación'; }
-    var msgs = {
-      'auth/wrong-password':      'Contraseña incorrecta. Intenta de nuevo.',
-      'auth/invalid-credential':  'Contraseña incorrecta. Intenta de nuevo.',
-      'auth/too-many-requests':   'Demasiados intentos. Espera un momento.',
-    };
-    var msg = msgs[e.code] || 'Error al verificar: '+e.message;
-    if(errEl){ errEl.textContent=msg; errEl.style.display='block'; }
-  });
+    if(errEl){ errEl.textContent='Error interno: '+ex.message; errEl.style.display='block'; }
+  }
 };
 
 
@@ -6538,17 +6578,16 @@ function doChangePasswordDirect(){
 
 function eliminarReporte(tipo, key, divEl){
   if(!db) return;
-  pedirConfirmPwd('¿Eliminar este reporte de exógena permanentemente? Esta acción no se puede deshacer.', function(){
+  pedirConfirmPwd('¿Eliminar este reporte permanentemente? Esta acción no se puede deshacer.', function(){
     var docId = key.replace(/[^a-zA-Z0-9_-]/g,'_');
+    console.log('[ELIM] Eliminando doc:', docId, 'tipo:', tipo);
     db.collection('resultados').doc(docId).delete().then(function(){
+      console.log('[ELIM] Eliminado correctamente');
       var c = clients.find(function(x){return x.id===activeClientId;});
       var yr = activeYear||new Date().getFullYear();
       audRegistrar('Eliminar','Exógena',activeClientId,(c||{}).razon||'','Reporte eliminado desde Archivo de Reportes');
-      if(tipo==='exogena' && divEl){
-        divEl.style.display='none';
-      } else {
-        cargarArchivo(c.id, yr);
-      }
+      if(divEl) divEl.style.display='none';
+      if(c) cargarArchivo(c.id, yr);
       var sb = document.createElement('div');
       sb.textContent = '✓ Reporte eliminado correctamente';
       sb.style.cssText = 'position:fixed;bottom:24px;right:24px;background:#1a2580;color:#fff;padding:12px 20px;border-radius:8px;font-family:Montserrat,sans-serif;font-size:12px;font-weight:700;z-index:9999;box-shadow:0 4px 20px rgba(0,0,0,.3);';
