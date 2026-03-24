@@ -555,6 +555,14 @@ body{font-family:'Montserrat',sans-serif;background:var(--bg);color:var(--text);
         <h3>Editar trabajo</h3>
         <label class="modal-label">Nombre<input type="text" id="te-title"/></label>
         <label class="modal-label">Cliente<input type="text" id="te-client"/></label>
+        <label class="modal-label">Encargado<input type="text" id="te-encargado" placeholder="Nombre del encargado"/></label>
+        <label class="modal-label">Personas asignadas
+          <div style="display:flex;gap:6px;margin-top:4px;">
+            <input type="text" id="te-persona-add" placeholder="Agregar persona..." style="flex:1;font-size:11px;" onkeydown="if(event.key==='Enter'){event.preventDefault();addPersonaTag('te-persona-add','te-personas-tags');}"/>
+            <button onclick="addPersonaTag('te-persona-add','te-personas-tags')" style="background:#1a2580;color:#fff;border:none;border-radius:6px;padding:5px 10px;font-size:11px;cursor:pointer;">+</button>
+          </div>
+          <div id="te-personas-tags" style="display:flex;gap:5px;flex-wrap:wrap;margin-top:6px;"></div>
+        </label>
         <label class="modal-label">Fecha inicio<input type="date" id="te-start"/></label>
         <label class="modal-label">Fecha límite<input type="date" id="te-due"/></label>
         <label class="modal-label">Valor ($)<input type="number" id="te-valor" min="0"/></label>
@@ -581,9 +589,10 @@ body{font-family:'Montserrat',sans-serif;background:var(--bg);color:var(--text);
 
     <div class="form-card">
       <h2>Registrar nuevo ingreso</h2>
-      <div class="form-grid" style="grid-template-columns:2fr 1.5fr 1fr 1fr 1fr 1fr 1.2fr 1fr auto;gap:8px;max-width:100%;overflow:visible;">
+      <div class="form-grid" style="grid-template-columns:2fr 1.5fr 1.5fr 1fr 1fr 1fr 1fr 1.2fr 1fr auto;gap:8px;max-width:100%;overflow:visible;">
         <label>Nombre del trabajo<input type="text" id="t-inp-title" placeholder="Consultoría fiscal"/></label>
         <label>Cliente<input type="text" id="t-inp-client" placeholder="Empresa ABC"/></label>
+        <label>Encargado<input type="text" id="t-inp-encargado" placeholder="Nombre del encargado"/></label>
         <label>F. inicio<input type="date" id="t-inp-start"/></label>
         <label>F. límite<input type="date" id="t-inp-due"/></label>
         <label>Valor ($)<input type="number" id="t-inp-valor" placeholder="0" min="0"/></label>
@@ -592,13 +601,31 @@ body{font-family:'Montserrat',sans-serif;background:var(--bg);color:var(--text);
         <label>Estado<select id="t-inp-col"><option value="pending">Pendiente</option><option value="progress">En progreso</option><option value="done">Terminado</option></select></label>
         <label style="justify-content:flex-end;"><button class="btn-add" onclick="addTCard()">+ Agregar</button></label>
       </div>
+      <!-- Personas asignadas al trabajo -->
+      <div style="margin-top:6px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+        <span style="font-size:11px;font-weight:700;color:#1a2580;">Personas asignadas:</span>
+        <div id="t-inp-personas-tags" style="display:flex;gap:6px;flex-wrap:wrap;flex:1;"></div>
+        <div style="display:flex;gap:6px;">
+          <input type="text" id="t-inp-persona-add" placeholder="Nombre persona..." style="font-size:11px;border:1px solid #dde1f0;border-radius:6px;padding:5px 10px;width:160px;" onkeydown="if(event.key==='Enter'){event.preventDefault();addPersonaTag('t-inp-persona-add','t-inp-personas-tags');}"/>
+          <button onclick="addPersonaTag('t-inp-persona-add','t-inp-personas-tags')" style="background:#1a2580;color:#fff;border:none;border-radius:6px;padding:5px 12px;font-size:11px;font-weight:700;cursor:pointer;">+</button>
+        </div>
+      </div>
     </div>
     <div class="summary">
       <div class="metric"><div class="metric-label">Total facturado</div><div class="metric-value" id="t-sum-valor">$0</div></div>
       <div class="metric"><div class="metric-label">Total abonado</div><div class="metric-value green" id="t-sum-abono">$0</div></div>
       <div class="metric"><div class="metric-label">Saldo pendiente</div><div class="metric-value red" id="t-sum-saldo">$0</div></div>
     </div>
-    <div class="export-bar"><button class="btn-export" onclick="exportExcelTrabajos()"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>Exportar Excel</button></div>
+    <div class="export-bar" style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+      <button class="btn-export" onclick="exportExcelTrabajos()"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>Exportar Excel</button>
+      <div style="display:flex;align-items:center;gap:6px;margin-left:auto;">
+        <span style="font-size:11px;font-weight:700;color:#1a2580;">Filtrar por persona:</span>
+        <select id="t-filter-persona" onchange="renderTrabajos()" style="font-size:11px;border:1.5px solid #dde1f0;border-radius:7px;padding:5px 10px;font-family:Montserrat,sans-serif;color:#1a2580;background:#fff;cursor:pointer;">
+          <option value="">— Todas las personas —</option>
+        </select>
+        <button onclick="document.getElementById('t-filter-persona').value='';renderTrabajos();" style="font-size:10px;background:#f3f4f6;border:1px solid #dde1f0;border-radius:6px;padding:5px 8px;cursor:pointer;color:#6b7280;">✕ Limpiar</button>
+      </div>
+    </div>
     <div class="columns-3">
       <div class="col"><div class="col-header"><div class="col-dot pending"></div><span class="col-title">Pendiente</span><span class="col-count" id="t-cnt-pending">0</span></div><div id="t-cards-pending"></div></div>
       <div class="col"><div class="col-header"><div class="col-dot progress"></div><span class="col-title">En progreso</span><span class="col-count" id="t-cnt-progress">0</span></div><div id="t-cards-progress"></div></div>
@@ -1192,7 +1219,7 @@ function initTrabajosListener(){
     jobs=[];
     snap.forEach(d=>jobs.push(d.data()));
     jobs.sort((a,b)=>(a.num||0)-(b.num||0));
-    renderTrabajos();updateDashStats();populatePeriodSelectors();
+    renderTrabajos();updateDashStats();populatePeriodSelectors();updatePersonaFilter();
     checkTAlerts();
   },err=>console.warn('[JNF] trabajos listener:',err));
 }
@@ -1219,7 +1246,14 @@ function renderTSummary(filteredJobs){
 }
 
 function renderTrabajos(){
-  const filteredJobs=jobs.filter(j=>itemMatchesPeriod(j,'t'));
+  const filterPersona = (document.getElementById('t-filter-persona')||{}).value||'';
+  const filteredJobs=jobs.filter(j=>{
+    if(!itemMatchesPeriod(j,'t')) return false;
+    if(!filterPersona) return true;
+    if(j.encargado && j.encargado === filterPersona) return true;
+    if(j.personas && j.personas.includes(filterPersona)) return true;
+    return false;
+  });
   updatePeriodBadge('t',filteredJobs.length,jobs.length);
   T_COLS.forEach(col=>{
     const cont=document.getElementById('t-cards-'+col);
@@ -1250,6 +1284,8 @@ function renderTrabajos(){
       return`<div class="${cardCls}">
         <div class="card-header"><span class="card-num">#${j.num}</span><span class="card-title">${j.title}</span></div>
         <div class="card-client">${j.client||'Sin cliente'}</div>
+        ${j.encargado?`<div style="font-size:10px;color:#1a2580;font-weight:700;margin-top:2px;">👤 ${j.encargado}</div>`:''}
+        ${j.personas&&j.personas.length?`<div style="display:flex;gap:4px;flex-wrap:wrap;margin-top:4px;">${j.personas.map(p=>`<span style="background:#e8eaf6;color:#1a2580;font-size:9px;font-weight:700;padding:2px 7px;border-radius:10px;">${p}</span>`).join('')}</div>`:''}
         <div class="dates-row">${dt}${fpBadge(j.fp)}</div>
         <div class="finance-row">
           <div class="fin-item"><div class="fin-label">Valor</div><div class="fin-val">${fmtM(v)}</div></div>
@@ -1272,6 +1308,72 @@ function renderTrabajos(){
   checkTAlerts();
 }
 
+
+// ── HELPERS PERSONAS ASIGNADAS ──────────────────────────────
+function addPersonaTag(inputId, tagsId){
+  const inp = document.getElementById(inputId);
+  const tagsDiv = document.getElementById(tagsId);
+  if(!inp || !tagsDiv) return;
+  const nombre = inp.value.trim();
+  if(!nombre) return;
+  // Verificar que no esté duplicado
+  const existentes = Array.from(tagsDiv.querySelectorAll('[data-persona]')).map(el=>el.getAttribute('data-persona').toLowerCase());
+  if(existentes.includes(nombre.toLowerCase())){ inp.value=''; return; }
+  const tag = document.createElement('span');
+  tag.setAttribute('data-persona', nombre);
+  tag.style.cssText = 'display:inline-flex;align-items:center;gap:4px;background:#e8eaf6;color:#1a2580;font-size:10px;font-weight:700;padding:3px 8px;border-radius:12px;';
+  tag.innerHTML = nombre + '<button onclick="this.parentElement.remove();updatePersonaFilter();" style="background:none;border:none;cursor:pointer;color:#1a2580;font-size:12px;line-height:1;padding:0 0 0 2px;">×</button>';
+  tagsDiv.appendChild(tag);
+  inp.value = '';
+  updatePersonaFilter();
+}
+
+function getPersonasTags(tagsId){
+  const tagsDiv = document.getElementById(tagsId);
+  if(!tagsDiv) return [];
+  return Array.from(tagsDiv.querySelectorAll('[data-persona]')).map(el=>el.getAttribute('data-persona'));
+}
+
+function loadPersonasTags(tagsId, personas){
+  const tagsDiv = document.getElementById(tagsId);
+  if(!tagsDiv) return;
+  tagsDiv.innerHTML = '';
+  (personas||[]).forEach(function(nombre){
+    const tag = document.createElement('span');
+    tag.setAttribute('data-persona', nombre);
+    tag.style.cssText = 'display:inline-flex;align-items:center;gap:4px;background:#e8eaf6;color:#1a2580;font-size:10px;font-weight:700;padding:3px 8px;border-radius:12px;';
+    tag.innerHTML = nombre + '<button onclick="this.parentElement.remove();updatePersonaFilter();" style="background:none;border:none;cursor:pointer;color:#1a2580;font-size:12px;line-height:1;padding:0 0 0 2px;">×</button>';
+    tagsDiv.appendChild(tag);
+  });
+}
+
+function clearPersonasTags(tagsId){
+  const tagsDiv = document.getElementById(tagsId);
+  if(tagsDiv) tagsDiv.innerHTML = '';
+}
+
+function updatePersonaFilter(){
+  // Reconstruir el selector de filtro con todas las personas únicas
+  const sel = document.getElementById('t-filter-persona');
+  if(!sel) return;
+  const current = sel.value;
+  const todas = new Set();
+  jobs.forEach(function(j){
+    if(j.encargado) todas.add(j.encargado);
+    (j.personas||[]).forEach(function(p){ todas.add(p); });
+  });
+  // También las del formulario actual
+  getPersonasTags('t-inp-personas-tags').forEach(function(p){ todas.add(p); });
+  getPersonasTags('te-personas-tags').forEach(function(p){ todas.add(p); });
+  sel.innerHTML = '<option value="">— Todas las personas —</option>';
+  Array.from(todas).sort().forEach(function(p){
+    const opt = document.createElement('option');
+    opt.value = p; opt.textContent = p;
+    if(p === current) opt.selected = true;
+    sel.appendChild(opt);
+  });
+}
+
 function addTCard(){
   const title=document.getElementById('t-inp-title').value.trim();
   if(!title){alert('Por favor ingresa el nombre del trabajo.');return;}
@@ -1285,11 +1387,14 @@ function addTCard(){
     valor:document.getElementById('t-inp-valor').value,
     abono:document.getElementById('t-inp-abono').value,
     fp:document.getElementById('t-inp-fp').value,
+    encargado:document.getElementById('t-inp-encargado').value.trim(),
+    personas:getPersonasTags('t-inp-personas-tags'),
     created:todayStr(),
     doneDate:col==='done'?todayStr():null,paidDate:null,
     registradoPor:window._perfil?window._perfil.nombre||window._perfil.email:'desconocido'
   });
-  ['t-inp-title','t-inp-client','t-inp-start','t-inp-due','t-inp-valor','t-inp-abono'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  ['t-inp-title','t-inp-client','t-inp-start','t-inp-due','t-inp-valor','t-inp-abono','t-inp-encargado','t-inp-persona-add'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  clearPersonasTags('t-inp-personas-tags');
   const nuevoJob=jobs[jobs.length-1];
   saveTrabajos();
   saveJob(nuevoJob);
@@ -1340,6 +1445,8 @@ function openTEditModal(id){
   document.getElementById('te-abono').value=j.abono||'';
   document.getElementById('te-fp').value=j.fp||'';
   document.getElementById('te-col').value=j.col||'pending';
+  document.getElementById('te-encargado').value=j.encargado||'';
+  loadPersonasTags('te-personas-tags', j.personas||[]);
   document.getElementById('te-error').textContent='';
   document.getElementById('t-modal-edit-overlay').classList.add('active');
 }
@@ -1358,6 +1465,8 @@ function confirmTEdit(){
   const newCol=document.getElementById('te-col').value;
   if(newCol==='done'&&!j.doneDate)j.doneDate=todayStr();
   if(newCol!=='done')j.doneDate=null;
+  j.encargado=document.getElementById('te-encargado').value.trim();
+  j.personas=getPersonasTags('te-personas-tags');
   j.col=newCol;
   const jedit=jobs.find(x=>x.id===tPendingEditId); closeTEditModal(); if(jedit) saveJob(jedit);
 }
@@ -2289,10 +2398,4 @@ setInterval(()=>{checkTAlerts();checkEgresosAlerts();},3600000);
         </ul>
       </div>
       <div style="text-align:center;font-size:10px;color:#9ca3af;">
-        Versión 1.0.0 · Marzo 2026 · Contacto: <a href="mailto:asesoriasyconsultoriasjnfsas@gmail.com" style="color:#1a2580;font-weight:700;">asesoriasyconsultoriasjnfsas@gmail.com</a>
-      </div>
-    </div>
-  </div>
-</div>
-</body>
-</html>
+        Versión 1.0.0 · Marzo 2026 · Contacto: <a href="/cdn-cgi/l/email-protection#55342630263a273c34262c363a3b262039213a273c34263f3b33263426153238343c397b363a38" style="color:#1a2580;font-weight:700;"><span class="__cf_email__" data-cfemai
