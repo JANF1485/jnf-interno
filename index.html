@@ -2057,7 +2057,7 @@ async function readRUT(file){
                 {inline_data: {mime_type: 'application/pdf', data: b64}},
                 {text: promptUsar}
               ]}],
-              generationConfig: {temperature: 0, maxOutputTokens: 2048}
+              generationConfig: {temperature: 0, maxOutputTokens: 8192}
             })
           });
 
@@ -2077,8 +2077,15 @@ async function readRUT(file){
                   data.candidates[0].content.parts[0] &&
                   data.candidates[0].content.parts[0].text) || '';
 
-          if(text){ console.log('[RUT] texto recibido:', text.slice(0, 200)); break; }
-          lastErr = 'finishReason=' + ((data.candidates && data.candidates[0] && data.candidates[0].finishReason) || '?');
+          var finishReason = (data.candidates && data.candidates[0] && data.candidates[0].finishReason) || '';
+          if(text){
+            console.log('[RUT] texto recibido:', text.slice(0, 200));
+            if(finishReason === 'MAX_TOKENS'){
+              console.warn('[RUT] JSON truncado por MAX_TOKENS — intentando completar');
+            }
+            break;
+          }
+          lastErr = 'finishReason=' + finishReason;
 
         } catch(fe){
           lastErr = fe.message;
@@ -2138,6 +2145,16 @@ function rutParseJSON(text){
   var firstBrace = clean.indexOf('{');
   if(firstBrace > 0) clean = clean.slice(firstBrace);
   clean = clean.trim();
+
+  // Si el JSON está truncado (sin cierre), intentar completarlo
+  if(clean.indexOf('{') >= 0 && clean.lastIndexOf('}') < clean.indexOf('{')){
+    // No tiene cierre — agregar cierre forzado
+    clean = clean + '"}';
+  } else if(clean.split('{').length > clean.split('}').length){
+    // Más aperturas que cierres — completar
+    var diff = clean.split('{').length - clean.split('}').length;
+    for(var di=0; di<diff; di++) clean += '}';
+  }
 
   // Intentos de parse en orden de confianza
   var intentos = [];
