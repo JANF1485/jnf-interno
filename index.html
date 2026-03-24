@@ -246,7 +246,10 @@ body{font-family:'Montserrat',sans-serif;background:var(--bg);color:var(--text);
 .btn-edit{font-size:11px;font-family:inherit;padding:3px 8px;border:1px solid var(--blue-mid);border-radius:var(--radius);background:var(--blue-light);color:var(--blue);cursor:pointer;font-weight:500;}
 .btn-edit:hover{background:var(--blue);color:#fff;}
 .admin-only{display:none;}
-.is-admin .admin-only{display:inline-flex!important;}
+.is-admin .admin-only{display:block!important;}
+.is-admin button.admin-only,
+.is-admin a.admin-only,
+.is-admin span.admin-only{display:inline-flex!important;}
 
 /* ALERT BANNER */
 .alert-banner{display:none;background:#b45309;border-bottom:3px solid #92400e;}
