@@ -328,6 +328,7 @@ body{font-family:'Montserrat',sans-serif;background:var(--bg);color:var(--text);
 .section-f{background:#fff;border:1px solid var(--border);border-radius:var(--radius-lg);margin-bottom:1.5rem;overflow:hidden;}
 .section-header-f{background:var(--blue);padding:12px 16px;display:flex;align-items:center;justify-content:space-between;}
 .section-header-f h2{font-size:13px;font-weight:700;color:#fff;text-transform:uppercase;letter-spacing:.6px;}
+[id^="body-wrap-"]{overflow:hidden;max-height:none;opacity:1;transition:max-height .35s ease,opacity .3s ease;}
 .section-badge{font-size:11px;font-weight:700;background:rgba(255,255,255,.2);color:#fff;padding:2px 10px;border-radius:99px;}
 .tbl{width:100%;border-collapse:collapse;font-size:13px;}
 .tbl .right{text-align:right;}
@@ -810,17 +811,17 @@ body{font-family:'Montserrat',sans-serif;background:var(--bg);color:var(--text);
       <div class="metric-card gold"><div class="metric-label">Total facturado</div><div class="metric-value gold" id="m-facturado">$0</div><div class="metric-sub" id="m-facturado-sub"></div></div>
     </div>
     <div class="section-f" style="padding:20px 24px;">
-      <div class="section-header-f" style="margin:-20px -24px 20px;"><h2>Resumen visual</h2><span class="section-badge" id="badge-chart">—</span></div>
+      <div class="section-header-f" style="margin:-20px -24px 20px;"><h2>Resumen visual</h2><span class="section-badge" id="badge-chart">—</span><span id="badge-utilidad-visual" style="font-size:12px;font-weight:700;color:#fff;background:rgba(255,255,255,.18);padding:3px 12px;border-radius:99px;margin-left:auto;"></span></div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;align-items:center;">
         <div style="position:relative;width:100%;max-width:280px;height:280px;margin:0 auto;"><canvas id="pieChart"></canvas><div id="pie-center" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center;pointer-events:none;"><div style="font-size:11px;color:#6b7280;font-weight:600;text-transform:uppercase;">Utilidad</div><div id="pie-utilidad" style="font-size:20px;font-weight:800;color:#1a2580;">$0</div></div></div>
         <div><div id="pie-legend" style="display:flex;flex-direction:column;gap:12px;"></div></div>
       </div>
     </div>
-    <div class="section-f"><div class="section-header-f" style="background:#16a34a;"><h2>Cuentas por cobrar</h2><span class="section-badge" id="badge-cobrar">0</span></div><table class="tbl"><thead><tr><th>#</th><th>Trabajo</th><th>Cliente</th><th>Forma de Pago</th><th class="right">Valor</th><th class="right">Abonado</th><th class="right">Saldo</th><th>Fecha límite</th></tr></thead><tbody id="body-cobrar"></tbody></table></div>
-    <div class="section-f"><div class="section-header-f" style="background:#b91c1c;"><h2>Cuentas por pagar</h2><span class="section-badge" id="badge-pagar">0</span></div><table class="tbl"><thead><tr><th>#</th><th>Concepto</th><th>Proveedor</th><th>Categoría</th><th>Forma de Pago</th><th class="right">Valor</th><th>Fecha límite</th></tr></thead><tbody id="body-pagar"></tbody></table></div>
-    <div class="section-f"><div class="section-header-f"><h2>Detalle por cliente</h2><span class="section-badge" id="badge-clientes">0</span></div><table class="tbl"><thead><tr><th>Cliente</th><th class="right">Ingresos</th><th class="right">Facturado</th><th class="right">Cobrado</th><th class="right">Saldo</th></tr></thead><tbody id="body-clientes"></tbody></table></div>
-    <div class="section-f"><div class="section-header-f" style="background:#b45309;"><h2>Detalle por proveedor</h2><span class="section-badge" id="badge-proveedores">0</span></div><table class="tbl"><thead><tr><th>Proveedor</th><th class="right">Egresos</th><th class="right">Total</th><th class="right">Pagado</th><th class="right">Pendiente</th></tr></thead><tbody id="body-proveedores"></tbody></table></div>
-    <div class="section-f"><div class="section-header-f" style="background:var(--blue-dark);"><h2>Detalle por categoría</h2><span class="section-badge" id="badge-categorias">0</span></div><table class="tbl"><thead><tr><th>Categoría</th><th class="right">Cantidad</th><th class="right">Total</th><th class="right">Pagado</th><th class="right">Pendiente</th></tr></thead><tbody id="body-categorias"></tbody></table></div>
+    <div class="section-f"><div class="section-header-f" style="background:#16a34a;cursor:pointer;" onclick="toggleSeccion('cobrar',this)"><h2>Cuentas por cobrar</h2><div style="display:flex;align-items:center;gap:10px;margin-left:auto;"><span id="total-cobrar" style="font-size:13px;font-weight:800;color:#fff;"></span><span class="section-badge" id="badge-cobrar">0</span><span id="arrow-cobrar" style="font-size:16px;color:#fff;transition:transform .3s;display:inline-block;">▼</span></div></div><div id="body-wrap-cobrar"><table class="tbl"><thead><tr><th>#</th><th>Trabajo</th><th>Cliente</th><th>Forma de Pago</th><th class="right">Valor</th><th class="right">Abonado</th><th class="right">Saldo</th><th>Fecha límite</th></tr></thead><tbody id="body-cobrar"></tbody></table></div></div>
+    <div class="section-f"><div class="section-header-f" style="background:#b91c1c;cursor:pointer;" onclick="toggleSeccion('pagar',this)"><h2>Cuentas por pagar</h2><div style="display:flex;align-items:center;gap:10px;margin-left:auto;"><span id="total-pagar" style="font-size:13px;font-weight:800;color:#fff;"></span><span class="section-badge" id="badge-pagar">0</span><span id="arrow-pagar" style="font-size:16px;color:#fff;transition:transform .3s;display:inline-block;">▼</span></div></div><div id="body-wrap-pagar"><table class="tbl"><thead><tr><th>#</th><th>Concepto</th><th>Proveedor</th><th>Categoría</th><th>Forma de Pago</th><th class="right">Valor</th><th>Fecha límite</th></tr></thead><tbody id="body-pagar"></tbody></table></div></div>
+    <div class="section-f"><div class="section-header-f" style="cursor:pointer;" onclick="toggleSeccion('clientes',this)"><h2>Detalle por cliente</h2><div style="display:flex;align-items:center;gap:10px;margin-left:auto;"><span id="total-clientes" style="font-size:13px;font-weight:800;color:#fff;"></span><span class="section-badge" id="badge-clientes">0</span><span id="arrow-clientes" style="font-size:16px;color:#fff;transition:transform .3s;display:inline-block;">▼</span></div></div><div id="body-wrap-clientes"><table class="tbl"><thead><tr><th>Cliente</th><th class="right">Ingresos</th><th class="right">Facturado</th><th class="right">Cobrado</th><th class="right">Saldo</th></tr></thead><tbody id="body-clientes"></tbody></table></div></div>
+    <div class="section-f"><div class="section-header-f" style="background:#b45309;cursor:pointer;" onclick="toggleSeccion('proveedores',this)"><h2>Detalle por proveedor</h2><div style="display:flex;align-items:center;gap:10px;margin-left:auto;"><span id="total-proveedores" style="font-size:13px;font-weight:800;color:#fff;"></span><span class="section-badge" id="badge-proveedores">0</span><span id="arrow-proveedores" style="font-size:16px;color:#fff;transition:transform .3s;display:inline-block;">▼</span></div></div><div id="body-wrap-proveedores"><table class="tbl"><thead><tr><th>Proveedor</th><th class="right">Egresos</th><th class="right">Total</th><th class="right">Pagado</th><th class="right">Pendiente</th></tr></thead><tbody id="body-proveedores"></tbody></table></div></div>
+    <div class="section-f"><div class="section-header-f" style="background:#c9a227;cursor:pointer;" onclick="toggleSeccion('categorias',this)"><h2>Detalle por categoría</h2><div style="display:flex;align-items:center;gap:10px;margin-left:auto;"><span id="total-categorias" style="font-size:13px;font-weight:800;color:#1a2580;"></span><span class="section-badge" style="background:rgba(26,37,128,.2);color:#1a2580;" id="badge-categorias">0</span><span id="arrow-categorias" style="font-size:16px;color:#1a2580;transition:transform .3s;display:inline-block;">▼</span></div></div><div id="body-wrap-categorias"><table class="tbl"><thead><tr><th>Categoría</th><th class="right">Cantidad</th><th class="right">Total</th><th class="right">Pagado</th><th class="right">Pendiente</th></tr></thead><tbody id="body-categorias"></tbody></table></div></div>
   </div>
 
   <!-- TAB INGRESOS (admin only) -->
@@ -1887,6 +1888,8 @@ function renderChart(fj,fe){
   document.getElementById('pie-utilidad').textContent=fmtM(utilidad);
   document.getElementById('pie-utilidad').style.color=utilidad>=0?'#1a2580':'#b91c1c';
   document.getElementById('badge-chart').textContent=total>0?('Total: '+fmtM(total)):'Sin datos';
+  const badgeUtil=document.getElementById('badge-utilidad-visual');
+  if(badgeUtil)badgeUtil.textContent='Utilidad: '+fmtM(utilidad);
   const labels=['Ingresos','Egresos pag.','Por cobrar','Por pagar'];
   const data=[ingresos,egresos_p,cobrar,pagar];
   const colors=['#2535a8','#c9a227','#16a34a','#b91c1c'];
@@ -1902,7 +1905,10 @@ function renderFCobrar(fj){
   const lista=fj.filter(j=>(parseFloat(j.valor)||0)-(parseFloat(j.abono)||0)>0);
   document.getElementById('badge-cobrar').textContent=lista.length+' trabajo(s)';
   const tbody=document.getElementById('body-cobrar');
-  if(!lista.length){tbody.innerHTML='<tr><td colspan="8" class="empty-state">No hay cuentas por cobrar</td></tr>';return;}
+  if(!lista.length){
+    const el=document.getElementById('total-cobrar');if(el)el.textContent='';
+    tbody.innerHTML='<tr><td colspan="8" class="empty-state">No hay cuentas por cobrar</td></tr>';return;
+  }
   let total=0;
   tbody.innerHTML=lista.map(j=>{
     const v=parseFloat(j.valor)||0,ab=parseFloat(j.abono)||0,sd=v-ab;total+=sd;
@@ -1910,13 +1916,17 @@ function renderFCobrar(fj){
     const fechaTxt=j.due?(ov?'⚠ Vencido: ':td?'⚠ Hoy: ':'')+fmt(j.due):'—';
     return`<tr><td>#${j.num}</td><td>${j.title}</td><td>${j.client||'—'}</td><td>${fpHtml(j.fp)}</td><td class="right amount-blue">${fmtM(v)}</td><td class="right amount-green">${fmtM(ab)}</td><td class="right amount-red">${fmtM(sd)}</td><td class="${ov?'overdue-txt':td?'today-txt':''}">${fechaTxt}</td></tr>`;
   }).join('')+`<tr class="total-row"><td colspan="6" class="right">TOTAL</td><td class="right">${fmtM(total)}</td><td></td></tr>`;
+  const el=document.getElementById('total-cobrar');if(el)el.textContent=fmtM(total);
 }
 
 function renderFPagar(fe){
   const lista=fe.filter(e=>e.col==='pending');
   document.getElementById('badge-pagar').textContent=lista.length+' egreso(s)';
   const tbody=document.getElementById('body-pagar');
-  if(!lista.length){tbody.innerHTML='<tr><td colspan="7" class="empty-state">No hay cuentas por pagar</td></tr>';return;}
+  if(!lista.length){
+    const el=document.getElementById('total-pagar');if(el)el.textContent='';
+    tbody.innerHTML='<tr><td colspan="7" class="empty-state">No hay cuentas por pagar</td></tr>';return;
+  }
   let total=0;
   tbody.innerHTML=lista.map(e=>{
     const v=parseFloat(e.valor)||0;total+=v;
@@ -1924,6 +1934,7 @@ function renderFPagar(fe){
     const fechaTxt=e.fecha?(ov?'⚠ Vencido: ':td?'⚠ Hoy: ':'')+fmt(e.fecha):'—';
     return`<tr><td>#${e.num}</td><td>${e.desc}</td><td>${e.prov||'—'}</td><td>${e.cat}</td><td>${fpHtml(e.fp)}</td><td class="right amount-red">${fmtM(v)}</td><td class="${ov?'overdue-txt':td?'today-txt':''}">${fechaTxt}</td></tr>`;
   }).join('')+`<tr class="total-row"><td colspan="5" class="right">TOTAL</td><td class="right">${fmtM(total)}</td><td></td></tr>`;
+  const el=document.getElementById('total-pagar');if(el)el.textContent=fmtM(total);
 }
 
 function renderFClientes(fj){
@@ -1932,10 +1943,14 @@ function renderFClientes(fj){
   const list=Object.entries(map).sort((a,b)=>b[1].f-a[1].f);
   document.getElementById('badge-clientes').textContent=list.length+' cliente(s)';
   const tbody=document.getElementById('body-clientes');
-  if(!list.length){tbody.innerHTML='<tr><td colspan="5" class="empty-state">No hay clientes</td></tr>';return;}
+  if(!list.length){
+    const el=document.getElementById('total-clientes');if(el)el.textContent='';
+    tbody.innerHTML='<tr><td colspan="5" class="empty-state">No hay clientes</td></tr>';return;
+  }
   let tF=0,tC=0,tS=0;
   tbody.innerHTML=list.map(([n,d])=>{tF+=d.f;tC+=d.co;tS+=d.f-d.co;return`<tr><td><strong>${n}</strong></td><td class="right">${d.c}</td><td class="right amount-blue">${fmtM(d.f)}</td><td class="right amount-green">${fmtM(d.co)}</td><td class="right ${d.f-d.co>0?'amount-red':'amount-green'}">${fmtM(d.f-d.co)}</td></tr>`;}).join('')
     +`<tr class="total-row"><td>TOTAL</td><td class="right">${fj.length}</td><td class="right">${fmtM(tF)}</td><td class="right">${fmtM(tC)}</td><td class="right">${fmtM(tS)}</td></tr>`;
+  const el=document.getElementById('total-clientes');if(el)el.textContent=fmtM(tF);
 }
 
 function renderFProveedores(fe){
@@ -1944,8 +1959,13 @@ function renderFProveedores(fe){
   const list=Object.entries(map).sort((a,b)=>b[1].t-a[1].t);
   document.getElementById('badge-proveedores').textContent=list.length+' proveedor(es)';
   const tbody=document.getElementById('body-proveedores');
-  if(!list.length){tbody.innerHTML='<tr><td colspan="5" class="empty-state">No hay proveedores</td></tr>';return;}
-  tbody.innerHTML=list.map(([n,d])=>`<tr><td><strong>${n}</strong></td><td class="right">${d.c}</td><td class="right amount-blue">${fmtM(d.t)}</td><td class="right amount-green">${fmtM(d.p)}</td><td class="right ${d.t-d.p>0?'amount-red':'amount-green'}">${fmtM(d.t-d.p)}</td></tr>`).join('');
+  if(!list.length){
+    const el=document.getElementById('total-proveedores');if(el)el.textContent='';
+    tbody.innerHTML='<tr><td colspan="5" class="empty-state">No hay proveedores</td></tr>';return;
+  }
+  let tT=0;
+  tbody.innerHTML=list.map(([n,d])=>{tT+=d.t;return`<tr><td><strong>${n}</strong></td><td class="right">${d.c}</td><td class="right amount-blue">${fmtM(d.t)}</td><td class="right amount-green">${fmtM(d.p)}</td><td class="right ${d.t-d.p>0?'amount-red':'amount-green'}">${fmtM(d.t-d.p)}</td></tr>`;}).join('');
+  const el=document.getElementById('total-proveedores');if(el)el.textContent=fmtM(tT);
 }
 
 function renderFCategorias(fe){
@@ -1954,8 +1974,13 @@ function renderFCategorias(fe){
   const list=Object.entries(map).sort((a,b)=>b[1].t-a[1].t);
   document.getElementById('badge-categorias').textContent=list.length+' categoría(s)';
   const tbody=document.getElementById('body-categorias');
-  if(!list.length){tbody.innerHTML='<tr><td colspan="5" class="empty-state">No hay categorías</td></tr>';return;}
-  tbody.innerHTML=list.map(([n,d])=>`<tr><td><strong>${n}</strong></td><td class="right">${d.c}</td><td class="right amount-blue">${fmtM(d.t)}</td><td class="right amount-green">${fmtM(d.p)}</td><td class="right ${d.t-d.p>0?'amount-red':'amount-green'}">${fmtM(d.t-d.p)}</td></tr>`).join('');
+  if(!list.length){
+    const el=document.getElementById('total-categorias');if(el)el.textContent='';
+    tbody.innerHTML='<tr><td colspan="5" class="empty-state">No hay categorías</td></tr>';return;
+  }
+  let tT=0;
+  tbody.innerHTML=list.map(([n,d])=>{tT+=d.t;return`<tr><td><strong>${n}</strong></td><td class="right">${d.c}</td><td class="right amount-blue">${fmtM(d.t)}</td><td class="right amount-green">${fmtM(d.p)}</td><td class="right ${d.t-d.p>0?'amount-red':'amount-green'}">${fmtM(d.t-d.p)}</td></tr>`;}).join('');
+  const el=document.getElementById('total-categorias');if(el)el.textContent=fmtM(tT);
 }
 
 function exportExcelFinanciero(){
@@ -2174,6 +2199,30 @@ async function deleteUser(uid, nombre){
     } else {
       alert('Error: '+e.message);
     }
+  }
+}
+
+// ============================================================
+// COLAPSAR / EXPANDIR SECCIONES FINANCIERO
+// ============================================================
+const _seccionesState={cobrar:true,pagar:true,clientes:true,proveedores:true,categorias:true};
+function toggleSeccion(id){
+  const wrap=document.getElementById('body-wrap-'+id);
+  const arrow=document.getElementById('arrow-'+id);
+  if(!wrap)return;
+  _seccionesState[id]=!_seccionesState[id];
+  if(_seccionesState[id]){
+    wrap.style.maxHeight=wrap.scrollHeight+'px';
+    wrap.style.opacity='1';
+    if(arrow){arrow.style.transform='rotate(0deg)';}
+    setTimeout(()=>{wrap.style.maxHeight='none';},350);
+  } else {
+    wrap.style.maxHeight=wrap.scrollHeight+'px';
+    requestAnimationFrame(()=>{
+      wrap.style.maxHeight='0';
+      wrap.style.opacity='0';
+    });
+    if(arrow){arrow.style.transform='rotate(-90deg)';}
   }
 }
 
