@@ -607,7 +607,7 @@ body{font-family:'Montserrat',sans-serif;background:var(--bg);color:var(--text);
 
     <div class="form-card">
       <h2>Registrar nuevo ingreso</h2>
-      <div class="form-grid" style="grid-template-columns:2fr 1.5fr 1.5fr 1fr 1fr 1fr 1fr 1.2fr 1fr auto;gap:8px;max-width:100%;overflow:visible;">
+      <div class="form-grid" style="grid-template-columns:2fr 1.5fr 1.5fr 1fr 1fr 0.55fr 0.55fr 1.2fr 1fr auto;gap:8px;max-width:100%;overflow:visible;">
         <label>Nombre del trabajo<input type="text" id="t-inp-title" placeholder="Consultoría fiscal"/></label>
         <label>Cliente<input type="text" id="t-inp-client" placeholder="Empresa ABC"/></label>
         <label>Encargado
@@ -628,11 +628,11 @@ body{font-family:'Montserrat',sans-serif;background:var(--bg);color:var(--text);
         <span style="font-size:11px;font-weight:800;color:#1a2580;white-space:nowrap;text-transform:uppercase;letter-spacing:.5px;">🔍 Buscar:</span>
         <div style="display:flex;align-items:center;gap:6px;">
           <span style="font-size:11px;font-weight:600;color:#4b5563;white-space:nowrap;">Trabajo:</span>
-          <input type="text" id="t-search-title" placeholder="Nombre del trabajo..." oninput="renderTrabajos()" style="font-size:12px;border:1.5px solid #c5caee;border-radius:7px;padding:6px 11px;font-family:inherit;color:#1a2580;background:#fff;width:190px;outline:none;" onfocus="this.style.borderColor='#2535a8'" onblur="this.style.borderColor='#c5caee'"/>
+          <input type="text" id="t-search-title" placeholder="Nombre del trabajo..." oninput="renderTrabajos()" style="font-size:12px;border:1.5px solid #c5caee;border-radius:7px;padding:6px 11px;font-family:inherit;color:#1a2580;background:#fff;width:280px;outline:none;" onfocus="this.style.borderColor='#2535a8'" onblur="this.style.borderColor='#c5caee'"/>
         </div>
         <div style="display:flex;align-items:center;gap:6px;">
           <span style="font-size:11px;font-weight:600;color:#4b5563;white-space:nowrap;">Cliente:</span>
-          <input type="text" id="t-search-client" placeholder="Nombre del cliente..." oninput="renderTrabajos()" style="font-size:12px;border:1.5px solid #c5caee;border-radius:7px;padding:6px 11px;font-family:inherit;color:#1a2580;background:#fff;width:190px;outline:none;" onfocus="this.style.borderColor='#2535a8'" onblur="this.style.borderColor='#c5caee'"/>
+          <input type="text" id="t-search-client" placeholder="Nombre del cliente..." oninput="renderTrabajos()" style="font-size:12px;border:1.5px solid #c5caee;border-radius:7px;padding:6px 11px;font-family:inherit;color:#1a2580;background:#fff;width:280px;outline:none;" onfocus="this.style.borderColor='#2535a8'" onblur="this.style.borderColor='#c5caee'"/>
         </div>
         <button onclick="document.getElementById('t-search-title').value='';document.getElementById('t-search-client').value='';renderTrabajos();" style="font-size:11px;background:#fff;border:1.5px solid #c5caee;border-radius:7px;padding:6px 12px;cursor:pointer;color:#6b7280;font-family:inherit;font-weight:600;" title="Limpiar búsqueda">✕ Limpiar</button>
         <!-- Tags de personas ocultos pero funcionales -->
