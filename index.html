@@ -784,6 +784,12 @@ body{font-family:'Montserrat',sans-serif;background:var(--bg);color:var(--text);
       <select class="period-select" id="f-period-year" onchange="loadFinanciero()">
         <option value="">— Todos los años —</option>
       </select>
+      <label style="font-size:11px;font-weight:700;color:var(--text2);white-space:nowrap;">Forma de pago:</label>
+      <select class="period-select" id="f-filter-fp" onchange="loadFinanciero()">
+        <option value="">— Todas —</option>
+        <option value="Efectivo">💵 Efectivo</option>
+        <option value="Transferencia">🏦 Transferencia</option>
+      </select>
       <span class="period-badge" id="f-period-badge">Todos los registros</span>
       <button class="btn-period-all" onclick="clearFPeriod()">Ver todos</button>
     </div>
@@ -1286,7 +1292,8 @@ function clearEPeriod(){
 }
 function clearFPeriod(){
   const ms=document.getElementById('f-period-month');const ys=document.getElementById('f-period-year');
-  if(ms)ms.value='';if(ys)ys.value='';loadFinanciero();
+  const fps=document.getElementById('f-filter-fp');
+  if(ms)ms.value='';if(ys)ys.value='';if(fps)fps.value='';loadFinanciero();
 }
 
 // ============================================================
@@ -1826,8 +1833,17 @@ function exportExcelEgresos(){
 // FINANCIERO
 // ============================================================
 function getFilteredData(){
-  const fj=jobs.filter(j=>itemMatchesPeriod(j,'f'));
-  const fe=egresos.filter(e=>itemMatchesPeriod(e,'f'));
+  const selFP=(document.getElementById('f-filter-fp')||{}).value||'';
+  const fj=jobs.filter(j=>{
+    if(!itemMatchesPeriod(j,'f')) return false;
+    if(selFP && j.fp!==selFP) return false;
+    return true;
+  });
+  const fe=egresos.filter(e=>{
+    if(!itemMatchesPeriod(e,'f')) return false;
+    if(selFP && e.fp!==selFP) return false;
+    return true;
+  });
   return{fj,fe};
 }
 
