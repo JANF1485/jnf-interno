@@ -2012,7 +2012,19 @@ function renderChart(fj,fe){
 
 function renderFCobrar(fj){
   const selFP=(document.getElementById('f-filter-fp')||{}).value||'';
-  const lista=fj.filter(j=>(parseFloat(j.valor)||0)-abonosPorFP(j,selFP).total>0);
+  // Sin filtro: saldo = valor - total abonado
+  // Con filtro: solo aparece si tiene abono en esa modalidad pero el abono de esa modalidad < valor total
+  // (es decir, el cliente aún tiene saldo general pendiente Y pagó en esa modalidad)
+  const lista=fj.filter(j=>{
+    const r=abonosPorFP(j,selFP);
+    if(selFP){
+      // Con filtro: solo incluir si tiene al menos un abono en esa modalidad Y hay saldo pendiente total
+      const totalAbonado=(j.abonos||[]).reduce((s,a)=>s+(parseFloat(a.monto)||0),0);
+      const saldoTotal=(parseFloat(j.valor)||0)-totalAbonado;
+      return r.total>0&&saldoTotal>0; // pagó algo en esa modalidad y aún hay saldo pendiente
+    }
+    return(parseFloat(j.valor)||0)-r.total>0;
+  });
   document.getElementById('badge-cobrar').textContent=lista.length+' trabajo(s)';
   const tbody=document.getElementById('body-cobrar');
   if(!lista.length){
@@ -2022,7 +2034,10 @@ function renderFCobrar(fj){
   let totalSD=0,totalV=0;
   tbody.innerHTML=lista.map(j=>{
     const v=parseFloat(j.valor)||0;
-    const r=abonosPorFP(j,selFP);const sd=v-r.total;totalSD+=sd;totalV+=v;
+    const r=abonosPorFP(j,selFP);
+    const totalAbonado=(j.abonos||[]).reduce((s,a)=>s+(parseFloat(a.monto)||0),0);
+    const sd=selFP?v-totalAbonado:v-r.total;
+    totalSD+=sd;totalV+=v;
     const ov=isOverdue(j.due),td=isToday(j.due);
     const fechaTxt=j.due?(ov?'Vencido: ':td?'Hoy: ':'')+fmt(j.due):'-';
     return`<tr><td>#${j.num}</td><td>${j.title}</td><td>${j.client||'-'}</td><td class="right amount-blue">${fmtM(v)}</td><td class="right" style="color:#854d0e;font-weight:600;">${r.ef>0?fmtM(r.ef):'-'}</td><td class="right" style="color:#1e40af;font-weight:600;">${r.tr>0?fmtM(r.tr):'-'}</td><td class="right amount-green">${fmtM(r.total)}</td><td class="right amount-red">${fmtM(sd)}</td><td class="${ov?'overdue-txt':td?'today-txt':''}">${fechaTxt}</td></tr>`;
