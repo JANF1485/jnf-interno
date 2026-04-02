@@ -747,6 +747,19 @@ body{font-family:'Montserrat',sans-serif;background:var(--bg);color:var(--text);
         <label>Estado<select id="e-inp-col"><option value="pending">Pendiente</option><option value="paid">Pagado</option></select></label>
         <label style="justify-content:flex-end;"><button class="btn-add" onclick="addEgresoCard()">+ Registrar</button></label>
       </div>
+      <!-- Buscadores integrados en el formulario de egresos -->
+      <div style="margin-top:8px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;background:#f0f4ff;border-radius:8px;padding:10px 14px;border:1px solid #c5caee;">
+        <span style="font-size:11px;font-weight:800;color:#1a2580;white-space:nowrap;text-transform:uppercase;letter-spacing:.5px;">🔍 Buscar:</span>
+        <div style="display:flex;align-items:center;gap:6px;">
+          <span style="font-size:11px;font-weight:600;color:#4b5563;white-space:nowrap;">Descripción:</span>
+          <input type="text" id="e-search-desc" placeholder="Descripción del egreso..." oninput="renderEgresos()" style="font-size:12px;border:1.5px solid #c5caee;border-radius:7px;padding:6px 11px;font-family:inherit;color:#1a2580;background:#fff;width:240px;outline:none;" onfocus="this.style.borderColor='#2535a8'" onblur="this.style.borderColor='#c5caee'"/>
+        </div>
+        <div style="display:flex;align-items:center;gap:6px;">
+          <span style="font-size:11px;font-weight:600;color:#4b5563;white-space:nowrap;">Proveedor:</span>
+          <input type="text" id="e-search-prov" placeholder="Nombre del proveedor..." oninput="renderEgresos()" style="font-size:12px;border:1.5px solid #c5caee;border-radius:7px;padding:6px 11px;font-family:inherit;color:#1a2580;background:#fff;width:240px;outline:none;" onfocus="this.style.borderColor='#2535a8'" onblur="this.style.borderColor='#c5caee'"/>
+        </div>
+        <button onclick="document.getElementById('e-search-desc').value='';document.getElementById('e-search-prov').value='';renderEgresos();" style="font-size:11px;background:#fff;border:1.5px solid #c5caee;border-radius:7px;padding:6px 12px;cursor:pointer;color:#6b7280;font-family:inherit;font-weight:600;">✕ Limpiar</button>
+      </div>
     </div>
     <div class="summary">
       <div class="metric"><div class="metric-label">Total egresos</div><div class="metric-value" id="e-sum-total">$0</div></div>
@@ -1267,7 +1280,8 @@ function clearTPeriod(){
 function clearEPeriod(){
   const ms=document.getElementById('e-period-month');const ys=document.getElementById('e-period-year');
   const fps=document.getElementById('e-filter-fp');
-  if(ms)ms.value='';if(ys)ys.value='';if(fps)fps.value='';
+  const sd=document.getElementById('e-search-desc');const sp=document.getElementById('e-search-prov');
+  if(ms)ms.value='';if(ys)ys.value='';if(fps)fps.value='';if(sd)sd.value='';if(sp)sp.value='';
   renderEgresos();
 }
 function clearFPeriod(){
@@ -1642,9 +1656,13 @@ function renderEgresosSummary(filteredEgresos){
 
 function renderEgresos(){
   const fFPEgr=((document.getElementById('e-filter-fp')||{}).value||'');
+  const fSearchDesc=((document.getElementById('e-search-desc')||{}).value||'').toLowerCase().trim();
+  const fSearchProv=((document.getElementById('e-search-prov')||{}).value||'').toLowerCase().trim();
   const filteredEgresos=egresos.filter(e=>{
     if(!itemMatchesPeriod(e,'e')) return false;
     if(fFPEgr && e.fp!==fFPEgr) return false;
+    if(fSearchDesc && !(e.desc||'').toLowerCase().includes(fSearchDesc)) return false;
+    if(fSearchProv && !(e.prov||'').toLowerCase().includes(fSearchProv)) return false;
     return true;
   });
   updatePeriodBadge('e',filteredEgresos.length,egresos.length);
