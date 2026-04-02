@@ -1462,7 +1462,7 @@ function renderTrabajos(){
     if(fPersonaTrab && j.encargado!==fPersonaTrab && !(j.personas||[]).includes(fPersonaTrab)) return false;
     if(fSearchTitle && !(j.title||'').toLowerCase().includes(fSearchTitle)) return false;
     if(fSearchClient && !(j.client||'').toLowerCase().includes(fSearchClient)) return false;
-    if(fFP && j.fp!==fFP) return false;
+    if(fFP && !(j.abonos||[]).some(a=>a.fp===fFP)) return false;
     return true;
   });
   updatePeriodBadge('t',filteredJobs.length,jobs.length);
@@ -1491,7 +1491,6 @@ function renderTrabajos(){
         else dt+=`<span class="badge">Límite: <b>${fmt(j.due)}</b></span>`;
       }
       if(isDone&&j.doneDate)dt+=`<span class="badge">Terminado: <b>${j.doneDate}</b></span>`;
-      if(j.paidDate)dt+=`<span class="badge paid-date">Pago: <b>${j.paidDate}</b></span>`;
       const safeTitle=j.title.replace(/'/g,"\\'").replace(/"/g,'&quot;');
       const adminBtns=isAdmin()?`<button class="btn-edit admin-only" onclick="openTEditModal('${j.id}')" style="display:inline-flex;">✏</button><button class="btn-del admin-only" onclick="askTDel('${j.id}','${safeTitle}')" style="display:inline-flex;">🗑</button>`:'';
       const abonos=j.abonos||[];
@@ -1510,7 +1509,7 @@ function renderTrabajos(){
         <div class="card-client">${j.client||'Sin cliente'}</div>
         ${j.encargado?`<div style="font-size:10px;color:var(--blue);font-weight:700;margin-top:3px;">👤 ${j.encargado}</div>`:''}
         ${j.personas&&j.personas.length?`<div style="display:flex;gap:4px;flex-wrap:wrap;margin-top:4px;">${j.personas.map(p=>`<span style="background:#e8eaf6;color:#1a2580;font-size:9px;font-weight:700;padding:2px 7px;border-radius:10px;">${p}</span>`).join('')}</div>`:''}
-        <div class="dates-row">${dt}${fpBadge(j.fp)}</div>
+        <div class="dates-row">${dt}</div>
         <div class="finance-row">
           <div class="fin-item"><div class="fin-label">Valor</div><div class="fin-val">${fmtM(v)}</div></div>
           <div class="fin-item"><div class="fin-label">Abono</div><div class="fin-val">${fmtM(ab)}</div></div>
@@ -1932,7 +1931,7 @@ function getFilteredData(){
   const selFP=(document.getElementById('f-filter-fp')||{}).value||'';
   const fj=jobs.filter(j=>{
     if(!itemMatchesPeriod(j,'f')) return false;
-    if(selFP && j.fp!==selFP) return false;
+    if(selFP && !(j.abonos||[]).some(a=>a.fp===selFP)) return false;
     return true;
   });
   const fe=egresos.filter(e=>{
@@ -2606,14 +2605,14 @@ function renderIngresos(){
         if(selYear&&d.getFullYear()!==selYear)return false;
       }
     }
-    if(selFP && j.fp!==selFP)return false;
+    if(selFP && !(j.abonos||[]).some(a=>a.fp===selFP))return false;
     return true;
   });
   const badge=document.getElementById('i-period-badge');
   if(badge)badge.textContent=filtered.length===jobs.length?'Todos los registros':filtered.length+' registros filtrados';
   // Summary
   let totalValor=0,totalAbono=0;
-  filtered.forEach(j=>{totalValor+=parseFloat(j.valor)||0;totalAbono+=parseFloat(j.abono)||0;});
+  filtered.forEach(j=>{totalValor+=parseFloat(j.valor)||0;totalAbono+=abonosPorFP(j).total;});
   const el_v=document.getElementById('i-sum-valor');const el_a=document.getElementById('i-sum-abono');const el_s=document.getElementById('i-sum-saldo');
   if(el_v)el_v.textContent=fmtM(totalValor);
   if(el_a)el_a.textContent=fmtM(totalAbono);
