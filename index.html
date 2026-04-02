@@ -557,7 +557,21 @@ body{font-family:'Montserrat',sans-serif;background:var(--bg);color:var(--text);
         <div class="modal-actions"><button class="btn-cancel" onclick="closeTPayModal()">Cancelar</button><button class="btn-confirm-pay-t" onclick="confirmTPago()">Registrar abono</button></div>
       </div>
     </div>
-    <!-- Modal Eliminar Trabajo (solo admin) -->
+    <!-- Modal Editar Abono -->
+    <div class="modal-overlay" id="t-modal-edit-abono-overlay">
+      <div class="modal blue-top">
+        <h3>Editar abono</h3>
+        <p id="t-modal-edit-abono-msg" style="font-size:12px;color:#4b5563;margin-bottom:12px;"></p>
+        <label class="modal-label">Monto ($)<input type="number" id="t-edit-abono-monto" min="0" style="font-family:inherit;"/></label>
+        <label class="modal-label">Forma de pago<select id="t-edit-abono-fp" style="font-family:inherit;"><option value="Efectivo">💵 Efectivo</option><option value="Transferencia">🏦 Transferencia</option></select></label>
+        <label class="modal-label">Fecha<input type="date" id="t-edit-abono-fecha" style="font-family:inherit;"/></label>
+        <div class="modal-error" id="t-edit-abono-error" style="font-size:11px;color:#b91c1c;min-height:14px;"></div>
+        <div class="modal-actions">
+          <button class="btn-cancel" onclick="closeEditAbonoModal()">Cancelar</button>
+          <button class="btn-primary" onclick="confirmEditAbono()">Guardar</button>
+        </div>
+      </div>
+    </div>
     <div class="modal-overlay" id="t-modal-overlay">
       <div class="modal">
         <h3>Eliminar trabajo</h3><p id="t-modal-msg"></p>
@@ -1401,15 +1415,13 @@ function initTrabajosListener(){
     jobs=[];
     snap.forEach(d=>{
       const job=d.data();
-      // Migrar: si tiene abono pero no tiene array abonos, reconstruirlo
-      if((parseFloat(job.abono)||0)>0 && (!job.abonos||job.abonos.length===0)){
-        job.abonos=[{
-          monto:parseFloat(job.abono)||0,
-          fp:job.fp||'',
-          fecha:job.paidDate||job.created||''
-        }];
+      // Migrar SOLO si el campo abonos no existe aún en Firestore
+      if(!Array.isArray(job.abonos)){
+        const montoExistente=parseFloat(job.abono)||0;
+        job.abonos=montoExistente>0?[{monto:montoExistente,fp:job.fp||'',fecha:job.paidDate||job.created||''}]:[];
       }
-      if(!job.abonos)job.abonos=[];
+      // Recalcular abono total siempre como suma del historial
+      job.abono=job.abonos.reduce((s,a)=>s+(parseFloat(a.monto)||0),0);
       jobs.push(job);
     });
     jobs.sort((a,b)=>(a.num||0)-(b.num||0));
@@ -1461,7 +1473,9 @@ function renderTrabajos(){
     if(!list.length){cont.innerHTML='<div class="empty">Sin trabajos</div>';return;}
     cont.innerHTML=list.map(j=>{
       const status=dateStatus(j.due,j.col);
-      const v=parseFloat(j.valor)||0,ab=parseFloat(j.abono)||0,sd=v-ab;
+      const v=parseFloat(j.valor)||0;
+      const ab=(j.abonos||[]).reduce((s,a)=>s+(parseFloat(a.monto)||0),0);
+      const sd=v-ab;
       const sdCls=sd<=0?'fin-val saldo-zero':'fin-val saldo-pos';
       const isDone=col==='done';
       let cardCls='card';
@@ -1479,14 +1493,15 @@ function renderTrabajos(){
       if(j.paidDate)dt+=`<span class="badge paid-date">Pago: <b>${j.paidDate}</b></span>`;
       const safeTitle=j.title.replace(/'/g,"\\'").replace(/"/g,'&quot;');
       const adminBtns=isAdmin()?`<button class="btn-edit admin-only" onclick="openTEditModal('${j.id}')" style="display:inline-flex;">✏</button><button class="btn-del admin-only" onclick="askTDel('${j.id}','${safeTitle}')" style="display:inline-flex;">🗑</button>`:'';
-      // Historial de abonos
       const abonos=j.abonos||[];
       const histHtml=abonos.length?`<div style="background:#f8faff;border:1px solid #e8eaf6;border-radius:6px;padding:7px 10px;margin-bottom:8px;">
         <div style="font-size:9px;font-weight:800;color:#1a2580;text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px;">💳 Historial de abonos</div>
-        ${abonos.map(a=>`<div style="display:flex;align-items:center;gap:6px;padding:3px 0;border-bottom:1px solid #e8eaf6;font-size:10px;">
-          <span style="font-weight:700;color:#166534;min-width:80px;">${fmtM(parseFloat(a.monto)||0)}</span>
+        ${abonos.map((a,idx)=>`<div style="display:flex;align-items:center;gap:5px;padding:3px 0;border-bottom:1px solid #e8eaf6;font-size:10px;">
+          <span style="font-weight:700;color:#166534;min-width:75px;">${fmtM(parseFloat(a.monto)||0)}</span>
           ${a.fp==='Efectivo'?'<span style="background:#fef9c3;border:1px solid #ca8a04;color:#854d0e;font-size:9px;font-weight:700;padding:2px 7px;border-radius:99px;">💵 Efectivo</span>':'<span style="background:#dbeafe;border:1px solid #3b82f6;color:#1e40af;font-size:9px;font-weight:700;padding:2px 7px;border-radius:99px;">🏦 Transferencia</span>'}
           <span style="color:#6b7280;margin-left:auto;">${a.fecha||''}</span>
+          <button onclick="editAbono('${j.id}',${idx})" style="background:#e8eaf6;border:none;border-radius:4px;padding:2px 6px;font-size:10px;cursor:pointer;color:#1a2580;font-weight:700;" title="Editar abono">✏</button>
+          <button onclick="deleteAbono('${j.id}',${idx})" style="background:#fee2e2;border:none;border-radius:4px;padding:2px 6px;font-size:10px;cursor:pointer;color:#b91c1c;font-weight:700;" title="Eliminar abono">🗑</button>
         </div>`).join('')}
       </div>`:'';
       return`<div class="${cardCls}">
@@ -1551,7 +1566,10 @@ function addTCard(){
 function askTPago(id){
   tPendingPayId=id;
   const j=jobs.find(x=>x.id===id);if(!j)return;
-  const sd=(parseFloat(j.valor)||0)-(parseFloat(j.abono)||0);
+  if(!j.abonos)j.abonos=[];
+  // Saldo real = valor - suma de todos los abonos del array
+  const abonoActual=j.abonos.reduce((s,a)=>s+(parseFloat(a.monto)||0),0);
+  const sd=(parseFloat(j.valor)||0)-abonoActual;
   document.getElementById('t-modal-pay-msg').textContent='"'+j.title+'" · '+j.client+' · Saldo: '+fmtM(sd);
   document.getElementById('t-modal-pay-fp').value='Efectivo';
   document.getElementById('t-modal-pay-monto').value=sd>0?sd:'';
@@ -1559,12 +1577,11 @@ function askTPago(id){
   const hoy=new Date().toISOString().slice(0,10);
   document.getElementById('t-modal-pay-date').value=hoy;
   // Mostrar historial previo
-  const abonos=j.abonos||[];
   const histWrap=document.getElementById('t-modal-abonos-hist');
   const histList=document.getElementById('t-modal-abonos-list');
-  if(abonos.length){
+  if(j.abonos.length){
     histWrap.style.display='block';
-    histList.innerHTML=abonos.map(a=>`<div style="display:flex;align-items:center;gap:6px;padding:3px 0;font-size:10px;border-bottom:1px solid #e8eaf6;">
+    histList.innerHTML=j.abonos.map(a=>`<div style="display:flex;align-items:center;gap:6px;padding:3px 0;font-size:10px;border-bottom:1px solid #e8eaf6;">
       <span style="font-weight:700;color:#166534;min-width:75px;">${fmtM(parseFloat(a.monto)||0)}</span>
       ${a.fp==='Efectivo'?'<span style="background:#fef9c3;border:1px solid #ca8a04;color:#854d0e;font-size:9px;font-weight:700;padding:1px 7px;border-radius:99px;">💵 Efectivo</span>':'<span style="background:#dbeafe;border:1px solid #3b82f6;color:#1e40af;font-size:9px;font-weight:700;padding:1px 7px;border-radius:99px;">🏦 Transferencia</span>'}
       <span style="margin-left:auto;color:#6b7280;">${a.fecha||''}</span>
@@ -1579,7 +1596,9 @@ function confirmTPago(){
   const j=jobs.find(x=>x.id===tPendingPayId);if(!j)return;
   const monto=parseFloat(document.getElementById('t-modal-pay-monto').value)||0;
   const errEl=document.getElementById('t-modal-pay-error');
-  const sd=(parseFloat(j.valor)||0)-(parseFloat(j.abono)||0);
+  // Recalcular saldo real desde el array
+  const abonoActual=j.abonos.reduce((s,a)=>s+(parseFloat(a.monto)||0),0);
+  const sd=(parseFloat(j.valor)||0)-abonoActual;
   if(monto<=0){errEl.textContent='Ingresa un monto mayor a cero.';return;}
   if(monto>sd+0.01){errEl.textContent='El monto supera el saldo pendiente ('+fmtM(sd)+').';return;}
   errEl.textContent='';
@@ -1587,14 +1606,14 @@ function confirmTPago(){
   const fechaInp=document.getElementById('t-modal-pay-date').value;
   let fechaFmt=todayStr();
   if(fechaInp){const[y,m,d]=fechaInp.split('-');fechaFmt=d+'/'+m+'/'+y;}
-  // Agregar al historial de abonos
+  // Agregar al historial
   if(!j.abonos)j.abonos=[];
   j.abonos.push({monto,fp,fecha:fechaFmt});
-  // Actualizar abono total
-  j.abono=(parseFloat(j.abono)||0)+monto;
-  // Si saldo es 0, registrar paidDate y fp del último abono
+  // Recalcular abono total desde el array (fuente de verdad)
+  j.abono=j.abonos.reduce((s,a)=>s+(parseFloat(a.monto)||0),0);
+  // Si saldo llega a 0, registrar fecha y fp del último pago
   const nuevoSaldo=(parseFloat(j.valor)||0)-j.abono;
-  if(nuevoSaldo<=0){j.paidDate=fechaFmt;j.fp=fp;}
+  if(nuevoSaldo<=0.01){j.paidDate=fechaFmt;j.fp=fp;}
   const jp=jobs.find(x=>x.id===tPendingPayId);
   closeTPayModal();
   if(jp)saveJob(jp);
@@ -1645,7 +1664,8 @@ function confirmTEdit(){
   j.start=document.getElementById('te-start').value;
   j.due=document.getElementById('te-due').value;
   j.valor=document.getElementById('te-valor').value;
-  j.abono=document.getElementById('te-abono').value;
+  // No sobreescribir j.abono — siempre se calcula desde j.abonos[]
+  j.abono=(j.abonos||[]).reduce((s,a)=>s+(parseFloat(a.monto)||0),0);
   j.fp=document.getElementById('te-fp').value;
   j.encargado=document.getElementById('te-encargado').value;
   j.personas=getPersonasTags('te-personas-tags');
@@ -2274,6 +2294,68 @@ async function deleteUser(uid, nombre){
       alert('Error: '+e.message);
     }
   }
+}
+
+// ============================================================
+// EDITAR / ELIMINAR ABONOS
+// ============================================================
+let _editAbonoJobId=null, _editAbonoIdx=-1;
+
+function editAbono(jobId, idx){
+  const j=jobs.find(x=>x.id===jobId);
+  if(!j||!j.abonos||!j.abonos[idx])return;
+  _editAbonoJobId=jobId;
+  _editAbonoIdx=idx;
+  const a=j.abonos[idx];
+  document.getElementById('t-modal-edit-abono-msg').textContent='"'+j.title+'" · '+j.client;
+  document.getElementById('t-edit-abono-monto').value=a.monto||0;
+  document.getElementById('t-edit-abono-fp').value=a.fp||'Efectivo';
+  // Convertir fecha DD/MM/YYYY → YYYY-MM-DD para el input
+  if(a.fecha){const p=a.fecha.split('/');if(p.length===3)document.getElementById('t-edit-abono-fecha').value=p[2]+'-'+p[1]+'-'+p[0];else document.getElementById('t-edit-abono-fecha').value='';}
+  else document.getElementById('t-edit-abono-fecha').value='';
+  document.getElementById('t-edit-abono-error').textContent='';
+  document.getElementById('t-modal-edit-abono-overlay').classList.add('active');
+}
+
+function closeEditAbonoModal(){
+  _editAbonoJobId=null;_editAbonoIdx=-1;
+  document.getElementById('t-modal-edit-abono-overlay').classList.remove('active');
+}
+
+function confirmEditAbono(){
+  const j=jobs.find(x=>x.id===_editAbonoJobId);
+  if(!j||_editAbonoIdx<0)return;
+  const monto=parseFloat(document.getElementById('t-edit-abono-monto').value)||0;
+  const errEl=document.getElementById('t-edit-abono-error');
+  if(monto<=0){errEl.textContent='El monto debe ser mayor a cero.';return;}
+  // Calcular si el nuevo monto no supera el valor total
+  const otrosAbonos=j.abonos.reduce((s,a,i)=>i===_editAbonoIdx?s:s+(parseFloat(a.monto)||0),0);
+  if(monto+otrosAbonos>(parseFloat(j.valor)||0)+0.01){errEl.textContent='El total de abonos superaría el valor del trabajo.';return;}
+  const fp=document.getElementById('t-edit-abono-fp').value;
+  const fechaInp=document.getElementById('t-edit-abono-fecha').value;
+  let fechaFmt='';
+  if(fechaInp){const[y,m,d]=fechaInp.split('-');fechaFmt=d+'/'+m+'/'+y;}
+  j.abonos[_editAbonoIdx]={monto,fp,fecha:fechaFmt};
+  // Recalcular total
+  j.abono=j.abonos.reduce((s,a)=>s+(parseFloat(a.monto)||0),0);
+  const nuevoSaldo=(parseFloat(j.valor)||0)-j.abono;
+  if(nuevoSaldo<=0.01&&j.abonos.length>0){const ult=j.abonos[j.abonos.length-1];j.paidDate=ult.fecha;j.fp=ult.fp;}
+  else{j.paidDate=null;}
+  closeEditAbonoModal();
+  saveJob(j);
+}
+
+function deleteAbono(jobId, idx){
+  const j=jobs.find(x=>x.id===jobId);
+  if(!j||!j.abonos||!j.abonos[idx])return;
+  const a=j.abonos[idx];
+  if(!confirm('¿Eliminar el abono de '+fmtM(parseFloat(a.monto)||0)+' ('+a.fp+' · '+a.fecha+')?'))return;
+  j.abonos.splice(idx,1);
+  j.abono=j.abonos.reduce((s,a)=>s+(parseFloat(a.monto)||0),0);
+  const nuevoSaldo=(parseFloat(j.valor)||0)-j.abono;
+  if(nuevoSaldo<=0.01&&j.abonos.length>0){const ult=j.abonos[j.abonos.length-1];j.paidDate=ult.fecha;j.fp=ult.fp;}
+  else{j.paidDate=null;j.fp='';}
+  saveJob(j);
 }
 
 // ============================================================
