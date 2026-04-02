@@ -1463,7 +1463,16 @@ function renderTrabajos(){
     if(fPersonaTrab && j.encargado!==fPersonaTrab && !(j.personas||[]).includes(fPersonaTrab)) return false;
     if(fSearchTitle && !(j.title||'').toLowerCase().includes(fSearchTitle)) return false;
     if(fSearchClient && !(j.client||'').toLowerCase().includes(fSearchClient)) return false;
-    if(fFP && !(j.abonos||[]).some(a=>a.fp===fFP)) return false;
+    if(fFP){
+      const tieneAbonos=(j.abonos||[]).length>0;
+      if(!tieneAbonos){
+        // Sin abono: usar j.fp del formulario
+        if(j.fp&&j.fp!==fFP) return false;
+        // Si j.fp está vacío, aparece en todos los filtros
+      } else {
+        if(!(j.abonos||[]).some(a=>a.fp===fFP)) return false;
+      }
+    }
     return true;
   });
   updatePeriodBadge('t',filteredJobs.length,jobs.length);
@@ -1932,7 +1941,14 @@ function getFilteredData(){
   const selFP=(document.getElementById('f-filter-fp')||{}).value||'';
   const fj=jobs.filter(j=>{
     if(!itemMatchesPeriod(j,'f')) return false;
-    if(selFP && !(j.abonos||[]).some(a=>a.fp===selFP)) return false;
+    if(selFP){
+      const tieneAbonos=(j.abonos||[]).length>0;
+      if(!tieneAbonos){
+        if(j.fp&&j.fp!==selFP) return false;
+      } else {
+        if(!(j.abonos||[]).some(a=>a.fp===selFP)) return false;
+      }
+    }
     return true;
   });
   const fe=egresos.filter(e=>{
@@ -1972,10 +1988,12 @@ function renderFMetrics(fj,fe){
   let cobrar=0;
   if(selFP){
     fj.forEach(j=>{
-      const r=abonosPorFP(j,''); // total real sin filtro
-      const saldoTotal=Math.max(0,(parseFloat(j.valor)||0)-r.total);
-      const rFP=abonosPorFP(j,selFP);
-      if(rFP.total>0&&saldoTotal>0) cobrar+=saldoTotal; // tiene pagos en esa modalidad y aún debe
+      const totalAbonado=abonosPorFP(j,'').total;
+      const saldoTotal=Math.max(0,(parseFloat(j.valor)||0)-totalAbonado);
+      if(saldoTotal<=0) return;
+      const tieneAbonos=(j.abonos||[]).length>0;
+      if(!tieneAbonos){if(!j.fp||j.fp===selFP)cobrar+=saldoTotal;return;}
+      if((j.abonos||[]).some(a=>a.fp===selFP))cobrar+=saldoTotal;
     });
   } else {
     cobrar=fj.reduce((a,j)=>a+Math.max(0,(parseFloat(j.valor)||0)-abonosPorFP(j,'').total),0);
@@ -1989,7 +2007,14 @@ function renderFMetrics(fj,fe){
   document.getElementById('m-egresos-sub').textContent=fe.filter(e=>e.col==='paid').length+' egreso(s) pagados';
   document.getElementById('m-cobrar').textContent=fmtM(cobrar);
   const conSaldo=selFP
-    ? fj.filter(j=>{const r=abonosPorFP(j,selFP);const s=Math.max(0,(parseFloat(j.valor)||0)-abonosPorFP(j,'').total);return r.total>0&&s>0;}).length
+    ? fj.filter(j=>{
+        const totalAbonado=abonosPorFP(j,'').total;
+        const saldoTotal=Math.max(0,(parseFloat(j.valor)||0)-totalAbonado);
+        if(saldoTotal<=0) return false;
+        const tieneAbonos=(j.abonos||[]).length>0;
+        if(!tieneAbonos) return !j.fp||j.fp===selFP;
+        return(j.abonos||[]).some(a=>a.fp===selFP);
+      }).length
     : fj.filter(j=>Math.max(0,(parseFloat(j.valor)||0)-abonosPorFP(j,'').total)>0).length;
   document.getElementById('m-cobrar-sub').textContent=conSaldo+' con saldo';
   document.getElementById('m-pagar').textContent=fmtM(egresosPendientes);
@@ -2009,9 +2034,12 @@ function renderChart(fj,fe){
   let cobrar=0;
   if(selFP){
     fj.forEach(j=>{
-      const rFP=abonosPorFP(j,selFP);
-      const saldoTotal=Math.max(0,(parseFloat(j.valor)||0)-abonosPorFP(j,'').total);
-      if(rFP.total>0&&saldoTotal>0)cobrar+=saldoTotal;
+      const totalAbonado=abonosPorFP(j,'').total;
+      const saldoTotal=Math.max(0,(parseFloat(j.valor)||0)-totalAbonado);
+      if(saldoTotal<=0) return;
+      const tieneAbonos=(j.abonos||[]).length>0;
+      if(!tieneAbonos){if(!j.fp||j.fp===selFP)cobrar+=saldoTotal;return;}
+      if((j.abonos||[]).some(a=>a.fp===selFP))cobrar+=saldoTotal;
     });
   } else {
     cobrar=fj.reduce((a,j)=>a+Math.max(0,(parseFloat(j.valor)||0)-abonosPorFP(j,'').total),0);
@@ -2037,18 +2065,14 @@ function renderChart(fj,fe){
 
 function renderFCobrar(fj){
   const selFP=(document.getElementById('f-filter-fp')||{}).value||'';
-  // Sin filtro: saldo = valor - total abonado
-  // Con filtro: solo aparece si tiene abono en esa modalidad pero el abono de esa modalidad < valor total
-  // (es decir, el cliente aún tiene saldo general pendiente Y pagó en esa modalidad)
   const lista=fj.filter(j=>{
-    const r=abonosPorFP(j,selFP);
-    if(selFP){
-      // Con filtro: solo incluir si tiene al menos un abono en esa modalidad Y hay saldo pendiente total
-      const totalAbonado=(j.abonos||[]).reduce((s,a)=>s+(parseFloat(a.monto)||0),0);
-      const saldoTotal=(parseFloat(j.valor)||0)-totalAbonado;
-      return r.total>0&&saldoTotal>0; // pagó algo en esa modalidad y aún hay saldo pendiente
-    }
-    return(parseFloat(j.valor)||0)-r.total>0;
+    const totalAbonado=abonosPorFP(j,'').total;
+    const saldoTotal=Math.max(0,(parseFloat(j.valor)||0)-totalAbonado);
+    if(saldoTotal<=0) return false; // ya está saldado, no aparece
+    if(!selFP) return true; // sin filtro: todos con saldo
+    const tieneAbonos=(j.abonos||[]).length>0;
+    if(!tieneAbonos) return !j.fp||j.fp===selFP; // sin abono: usar j.fp del formulario
+    return(j.abonos||[]).some(a=>a.fp===selFP);
   });
   document.getElementById('badge-cobrar').textContent=lista.length+' trabajo(s)';
   const tbody=document.getElementById('body-cobrar');
@@ -2652,7 +2676,14 @@ function renderIngresos(){
         if(selYear&&d.getFullYear()!==selYear)return false;
       }
     }
-    if(selFP && !(j.abonos||[]).some(a=>a.fp===selFP))return false;
+    if(selFP){
+      const tieneAbonos=(j.abonos||[]).length>0;
+      if(!tieneAbonos){
+        if(j.fp&&j.fp!==selFP) return false;
+      } else {
+        if(!(j.abonos||[]).some(a=>a.fp===selFP)) return false;
+      }
+    }
     return true;
   });
   const badge=document.getElementById('i-period-badge');
