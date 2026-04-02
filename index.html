@@ -730,13 +730,13 @@ body{font-family:'Montserrat',sans-serif;background:var(--bg);color:var(--text);
       <div class="form-grid" style="grid-template-columns:1.8fr 1.8fr 1.4fr 0.8fr 1fr 1fr 1.1fr 0.9fr auto;gap:8px;max-width:100%;overflow:visible;">
         <label>Descripción
           <div style="position:relative;">
-            <input type="text" id="e-inp-desc" placeholder="Pago arriendo" autocomplete="off" oninput="showEgresosAutocomplete('desc')" onblur="setTimeout(()=>hideEgresosAutocomplete('desc'),200)"/>
+            <input type="text" id="e-inp-desc" placeholder="Pago arriendo" autocomplete="off" oninput="showEgresosAutocomplete('desc')" onkeydown="egresosAutocompleteKeydown(event,'desc')" onblur="setTimeout(()=>hideEgresosAutocomplete('desc'),200)"/>
             <div id="e-autocomplete-desc" style="display:none;position:absolute;top:100%;left:0;right:0;background:#fff;border:1.5px solid #c5caee;border-radius:0 0 8px 8px;z-index:500;max-height:150px;overflow-y:auto;box-shadow:0 4px 12px rgba(0,0,0,.1);"></div>
           </div>
         </label>
         <label>Proveedor
           <div style="position:relative;">
-            <input type="text" id="e-inp-prov" placeholder="Inmobiliaria XYZ" autocomplete="off" oninput="showEgresosAutocomplete('prov')" onblur="setTimeout(()=>hideEgresosAutocomplete('prov'),200)"/>
+            <input type="text" id="e-inp-prov" placeholder="Inmobiliaria XYZ" autocomplete="off" oninput="showEgresosAutocomplete('prov')" onkeydown="egresosAutocompleteKeydown(event,'prov')" onblur="setTimeout(()=>hideEgresosAutocomplete('prov'),200)"/>
             <div id="e-autocomplete-prov" style="display:none;position:absolute;top:100%;left:0;right:0;background:#fff;border:1.5px solid #c5caee;border-radius:0 0 8px 8px;z-index:500;max-height:150px;overflow-y:auto;box-shadow:0 4px 12px rgba(0,0,0,.1);"></div>
           </div>
         </label>
@@ -1256,9 +1256,9 @@ function getPeriodFilter(prefix){
 function itemMatchesPeriod(item,prefix){
   const{month,year}=getPeriodFilter(prefix);
   if(!month&&!year)return true;
-  // Use 'created' date (DD/MM/YYYY) for filtering
-  const created=item.created||'';
-  const parts=created.split('/');
+  // Usar paidDate si existe, si no usar created
+  const fechaBase=item.paidDate||item.created||'';
+  const parts=fechaBase.split('/');
   if(parts.length===3){
     const [d,m,y]=parts;
     if(year&&y!==year)return false;
@@ -2229,6 +2229,8 @@ function toggleSeccion(id){
 // ============================================================
 // AUTOCOMPLETAR EGRESOS (descripción y proveedor)
 // ============================================================
+const _acIdx={desc:-1,prov:-1};
+
 function getEgresosUniqueValues(field){
   const seen=new Set();
   egresos.forEach(e=>{
@@ -2239,6 +2241,7 @@ function getEgresosUniqueValues(field){
 }
 
 function showEgresosAutocomplete(field){
+  _acIdx[field]=-1;
   const inputId=field==='desc'?'e-inp-desc':'e-inp-prov';
   const dropId='e-autocomplete-'+field;
   const input=document.getElementById(inputId);
@@ -2248,8 +2251,47 @@ function showEgresosAutocomplete(field){
   const all=getEgresosUniqueValues(field);
   const matches=q?all.filter(v=>v.toLowerCase().includes(q)&&v.toLowerCase()!==q):all;
   if(!matches.length){drop.style.display='none';return;}
-  drop.innerHTML=matches.slice(0,8).map(v=>`<div onclick="selectEgresosAutocomplete('${field}','${v.replace(/'/g,"\\'")}');return false;" style="padding:8px 12px;font-size:12px;cursor:pointer;border-bottom:1px solid #e8eaf6;color:#1a2580;font-family:inherit;" onmouseover="this.style.background='#e8eaf6'" onmouseout="this.style.background=''">${v}</div>`).join('');
+  drop.innerHTML=matches.slice(0,8).map((v,i)=>`<div data-idx="${i}" data-val="${v.replace(/"/g,'&quot;')}" onclick="selectEgresosAutocomplete('${field}','${v.replace(/'/g,"\\'")}');return false;" style="padding:8px 12px;font-size:12px;cursor:pointer;border-bottom:1px solid #e8eaf6;color:#1a2580;font-family:inherit;" onmouseover="setAcIdx('${field}',${i})" onmouseout="">${v}</div>`).join('');
   drop.style.display='block';
+}
+
+function setAcIdx(field,i){
+  _acIdx[field]=i;
+  _highlightAc(field);
+}
+
+function _highlightAc(field){
+  const drop=document.getElementById('e-autocomplete-'+field);
+  if(!drop)return;
+  const items=drop.querySelectorAll('div');
+  items.forEach((el,i)=>{
+    el.style.background=i===_acIdx[field]?'#c5caee':'';
+    el.style.fontWeight=i===_acIdx[field]?'700':'400';
+  });
+}
+
+function egresosAutocompleteKeydown(event,field){
+  const drop=document.getElementById('e-autocomplete-'+field);
+  if(!drop||drop.style.display==='none')return;
+  const items=drop.querySelectorAll('div');
+  if(!items.length)return;
+  if(event.key==='ArrowDown'){
+    event.preventDefault();
+    _acIdx[field]=Math.min(_acIdx[field]+1,items.length-1);
+    _highlightAc(field);
+  } else if(event.key==='ArrowUp'){
+    event.preventDefault();
+    _acIdx[field]=Math.max(_acIdx[field]-1,0);
+    _highlightAc(field);
+  } else if(event.key==='Enter'||event.key==='Tab'){
+    if(_acIdx[field]>=0&&items[_acIdx[field]]){
+      event.preventDefault();
+      const val=items[_acIdx[field]].dataset.val;
+      selectEgresosAutocomplete(field,val);
+    }
+  } else if(event.key==='Escape'){
+    hideEgresosAutocomplete(field);
+  }
 }
 
 function selectEgresosAutocomplete(field,value){
@@ -2259,7 +2301,7 @@ function selectEgresosAutocomplete(field,value){
   const drop=document.getElementById(dropId);
   if(input)input.value=value;
   if(drop)drop.style.display='none';
-  // Si seleccionó descripción, autocompletar también categoría y proveedor
+  _acIdx[field]=-1;
   if(field==='desc'){
     const egreso=egresos.find(e=>e.desc===value);
     if(egreso){
@@ -2274,6 +2316,7 @@ function selectEgresosAutocomplete(field,value){
 function hideEgresosAutocomplete(field){
   const drop=document.getElementById('e-autocomplete-'+field);
   if(drop)drop.style.display='none';
+  _acIdx[field]=-1;
 }
 
 // ============================================================
