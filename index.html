@@ -1950,19 +1950,23 @@ function loadFinanciero(){
 }
 
 // Helper: desglose de abonos por forma de pago
-function abonosPorFP(j){
+// Si se pasa selFP, solo suma esa modalidad (para cálculos con filtro activo)
+function abonosPorFP(j, selFP){
   const abonos=j.abonos||[];
   const ef=abonos.filter(a=>a.fp==='Efectivo').reduce((s,a)=>s+(parseFloat(a.monto)||0),0);
   const tr=abonos.filter(a=>a.fp==='Transferencia').reduce((s,a)=>s+(parseFloat(a.monto)||0),0);
+  if(selFP==='Efectivo') return{ef,tr:0,total:ef};
+  if(selFP==='Transferencia') return{ef:0,tr,total:tr};
   return{ef,tr,total:ef+tr};
 }
 
 function renderFMetrics(fj,fe){
+  const selFP=(document.getElementById('f-filter-fp')||{}).value||'';
   let ingEf=0,ingTr=0;
-  fj.forEach(j=>{const r=abonosPorFP(j);ingEf+=r.ef;ingTr+=r.tr;});
+  fj.forEach(j=>{const r=abonosPorFP(j,selFP);ingEf+=r.ef;ingTr+=r.tr;});
   const ingresos=ingEf+ingTr;
   const facturado=fj.reduce((a,j)=>a+(parseFloat(j.valor)||0),0);
-  const cobrar=fj.reduce((a,j)=>a+Math.max(0,(parseFloat(j.valor)||0)-abonosPorFP(j).total),0);
+  const cobrar=fj.reduce((a,j)=>a+Math.max(0,(parseFloat(j.valor)||0)-abonosPorFP(j,selFP).total),0);
   const egresosPagados=fe.filter(e=>e.col==='paid').reduce((a,e)=>a+(parseFloat(e.valor)||0),0);
   const egresosPendientes=fe.filter(e=>e.col==='pending').reduce((a,e)=>a+(parseFloat(e.valor)||0),0);
   const utilidad=ingresos-egresosPagados;
@@ -1971,7 +1975,7 @@ function renderFMetrics(fj,fe){
   document.getElementById('m-egresos').textContent=fmtM(egresosPagados);
   document.getElementById('m-egresos-sub').textContent=fe.filter(e=>e.col==='paid').length+' egreso(s) pagados';
   document.getElementById('m-cobrar').textContent=fmtM(cobrar);
-  document.getElementById('m-cobrar-sub').textContent=fj.filter(j=>Math.max(0,(parseFloat(j.valor)||0)-abonosPorFP(j).total)>0).length+' con saldo';
+  document.getElementById('m-cobrar-sub').textContent=fj.filter(j=>Math.max(0,(parseFloat(j.valor)||0)-abonosPorFP(j,selFP).total)>0).length+' con saldo';
   document.getElementById('m-pagar').textContent=fmtM(egresosPendientes);
   document.getElementById('m-pagar-sub').textContent=fe.filter(e=>e.col==='pending').length+' pendientes';
   document.getElementById('m-facturado').textContent=fmtM(facturado);
@@ -1983,9 +1987,10 @@ function renderFMetrics(fj,fe){
 }
 
 function renderChart(fj,fe){
-  const ingresos=fj.reduce((a,j)=>a+abonosPorFP(j).total,0);
+  const selFP=(document.getElementById('f-filter-fp')||{}).value||'';
+  const ingresos=fj.reduce((a,j)=>a+abonosPorFP(j,selFP).total,0);
   const egresos_p=fe.filter(e=>e.col==='paid').reduce((a,e)=>a+(parseFloat(e.valor)||0),0);
-  const cobrar=fj.reduce((a,j)=>a+Math.max(0,(parseFloat(j.valor)||0)-abonosPorFP(j).total),0);
+  const cobrar=fj.reduce((a,j)=>a+Math.max(0,(parseFloat(j.valor)||0)-abonosPorFP(j,selFP).total),0);
   const pagar=fe.filter(e=>e.col==='pending').reduce((a,e)=>a+(parseFloat(e.valor)||0),0);
   const utilidad=ingresos-egresos_p;
   const total=ingresos+egresos_p+cobrar+pagar;
@@ -2006,7 +2011,8 @@ function renderChart(fj,fe){
 }
 
 function renderFCobrar(fj){
-  const lista=fj.filter(j=>(parseFloat(j.valor)||0)-abonosPorFP(j).total>0);
+  const selFP=(document.getElementById('f-filter-fp')||{}).value||'';
+  const lista=fj.filter(j=>(parseFloat(j.valor)||0)-abonosPorFP(j,selFP).total>0);
   document.getElementById('badge-cobrar').textContent=lista.length+' trabajo(s)';
   const tbody=document.getElementById('body-cobrar');
   if(!lista.length){
@@ -2016,7 +2022,7 @@ function renderFCobrar(fj){
   let totalSD=0,totalV=0;
   tbody.innerHTML=lista.map(j=>{
     const v=parseFloat(j.valor)||0;
-    const r=abonosPorFP(j);const sd=v-r.total;totalSD+=sd;totalV+=v;
+    const r=abonosPorFP(j,selFP);const sd=v-r.total;totalSD+=sd;totalV+=v;
     const ov=isOverdue(j.due),td=isToday(j.due);
     const fechaTxt=j.due?(ov?'Vencido: ':td?'Hoy: ':'')+fmt(j.due):'-';
     return`<tr><td>#${j.num}</td><td>${j.title}</td><td>${j.client||'-'}</td><td class="right amount-blue">${fmtM(v)}</td><td class="right" style="color:#854d0e;font-weight:600;">${r.ef>0?fmtM(r.ef):'-'}</td><td class="right" style="color:#1e40af;font-weight:600;">${r.tr>0?fmtM(r.tr):'-'}</td><td class="right amount-green">${fmtM(r.total)}</td><td class="right amount-red">${fmtM(sd)}</td><td class="${ov?'overdue-txt':td?'today-txt':''}">${fechaTxt}</td></tr>`;
@@ -2043,12 +2049,13 @@ function renderFPagar(fe){
 }
 
 function renderFClientes(fj){
+  const selFP=(document.getElementById('f-filter-fp')||{}).value||'';
   const map={};
   fj.forEach(j=>{
     const k=j.client||'Sin cliente';
     if(!map[k])map[k]={c:0,f:0,ef:0,tr:0,co:0};
     map[k].c++;map[k].f+=parseFloat(j.valor)||0;
-    const r=abonosPorFP(j);map[k].ef+=r.ef;map[k].tr+=r.tr;map[k].co+=r.total;
+    const r=abonosPorFP(j,selFP);map[k].ef+=r.ef;map[k].tr+=r.tr;map[k].co+=r.total;
   });
   const list=Object.entries(map).sort((a,b)=>b[1].f-a[1].f);
   document.getElementById('badge-clientes').textContent=list.length+' cliente(s)';
@@ -2612,7 +2619,8 @@ function renderIngresos(){
   if(badge)badge.textContent=filtered.length===jobs.length?'Todos los registros':filtered.length+' registros filtrados';
   // Summary
   let totalValor=0,totalAbono=0;
-  filtered.forEach(j=>{totalValor+=parseFloat(j.valor)||0;totalAbono+=abonosPorFP(j).total;});
+  const selFPi=(document.getElementById('i-filter-fp')||{}).value||'';
+  filtered.forEach(j=>{totalValor+=parseFloat(j.valor)||0;totalAbono+=abonosPorFP(j,selFPi).total;});
   const el_v=document.getElementById('i-sum-valor');const el_a=document.getElementById('i-sum-abono');const el_s=document.getElementById('i-sum-saldo');
   if(el_v)el_v.textContent=fmtM(totalValor);
   if(el_a)el_a.textContent=fmtM(totalAbono);
@@ -2624,7 +2632,7 @@ function renderIngresos(){
   if(!filtered.length){tbody.innerHTML='<tr><td colspan="12" style="text-align:center;color:var(--text3);padding:2rem;">Sin registros</td></tr>';return;}
   tbody.innerHTML=filtered.map((j,i)=>{
     const v=parseFloat(j.valor)||0;
-    const r=abonosPorFP(j);const sd=v-r.total;
+    const r=abonosPorFP(j,selFPi);const sd=v-r.total;
     const sdColor=sd<=0?'color:var(--green);font-weight:700':'color:var(--red);font-weight:700';
     return`<tr>
       <td>${i+1}</td>
