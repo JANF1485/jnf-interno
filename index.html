@@ -1399,7 +1399,19 @@ function initTrabajosListener(){
   // Listener en tiempo real
   _trabajosListener=onSnapshot(collection(db,'trabajos_interno'),snap=>{
     jobs=[];
-    snap.forEach(d=>jobs.push(d.data()));
+    snap.forEach(d=>{
+      const job=d.data();
+      // Migrar: si tiene abono pero no tiene array abonos, reconstruirlo
+      if((parseFloat(job.abono)||0)>0 && (!job.abonos||job.abonos.length===0)){
+        job.abonos=[{
+          monto:parseFloat(job.abono)||0,
+          fp:job.fp||'',
+          fecha:job.paidDate||job.created||''
+        }];
+      }
+      if(!job.abonos)job.abonos=[];
+      jobs.push(job);
+    });
     jobs.sort((a,b)=>(a.num||0)-(b.num||0));
     renderTrabajos();updateDashStats();populatePeriodSelectors();updatePersonaFilter();renderEncargados();populateAllEncSelects();
     checkTAlerts();
@@ -1510,6 +1522,9 @@ function addTCard(){
   if(!title){alert('Por favor ingresa el nombre del trabajo.');return;}
   jobCounter++;
   const col=document.getElementById('t-inp-col').value;
+  const abonoVal=parseFloat(document.getElementById('t-inp-abono').value)||0;
+  const fpVal=document.getElementById('t-inp-fp').value;
+  const abonosInit=abonoVal>0?[{monto:abonoVal,fp:fpVal,fecha:todayStr()}]:[];
   jobs.push({
     id:Date.now().toString(),num:jobCounter,
     title,client:document.getElementById('t-inp-client').value.trim(),
@@ -1517,9 +1532,10 @@ function addTCard(){
     due:document.getElementById('t-inp-due').value,
     valor:document.getElementById('t-inp-valor').value,
     abono:document.getElementById('t-inp-abono').value,
-    fp:document.getElementById('t-inp-fp').value,
+    fp:fpVal,
     encargado:document.getElementById('t-inp-encargado').value,
     personas:getPersonasTags('t-inp-personas-tags'),
+    abonos:abonosInit,
     created:todayStr(),
     doneDate:col==='done'?todayStr():null,paidDate:null,
     registradoPor:window._perfil?window._perfil.nombre||window._perfil.email:'desconocido'
@@ -1530,7 +1546,6 @@ function addTCard(){
   const nuevoJob=jobs[jobs.length-1];
   saveTrabajos();
   saveJob(nuevoJob);
-  // No llamar renderTrabajos() — el listener lo hará automáticamente
 }
 
 function askTPago(id){
