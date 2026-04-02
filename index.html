@@ -799,8 +799,8 @@ body{font-family:'Montserrat',sans-serif;background:var(--bg);color:var(--text);
       <div class="metric-card green"><div class="metric-label">Ingresos recibidos</div><div class="metric-value green" id="m-ingresos">$0</div><div class="metric-sub" id="m-ingresos-sub"></div></div>
       <div class="metric-card red"><div class="metric-label">Egresos pagados</div><div class="metric-value red" id="m-egresos">$0</div><div class="metric-sub" id="m-egresos-sub"></div></div>
       <div class="metric-card" id="utilidad-card"><div class="metric-label">Utilidad neta</div><div class="metric-value" id="m-utilidad">$0</div><div class="metric-sub">Ingresos − Egresos pagados</div></div>
-      <div class="metric-card orange"><div class="metric-label">Cuentas por cobrar</div><div class="metric-value orange" id="m-cobrar">$0</div><div class="metric-sub" id="m-cobrar-sub"></div></div>
-      <div class="metric-card" style="border-top-color:#b45309"><div class="metric-label">Cuentas por pagar</div><div class="metric-value" style="color:#b45309" id="m-pagar">$0</div><div class="metric-sub" id="m-pagar-sub"></div></div>
+      <div class="metric-card green"><div class="metric-label">Cuentas por cobrar</div><div class="metric-value green" id="m-cobrar">$0</div><div class="metric-sub" id="m-cobrar-sub"></div></div>
+      <div class="metric-card" style="border-top-color:#b91c1c"><div class="metric-label">Cuentas por pagar</div><div class="metric-value" style="color:#b91c1c" id="m-pagar">$0</div><div class="metric-sub" id="m-pagar-sub"></div></div>
       <div class="metric-card gold"><div class="metric-label">Total facturado</div><div class="metric-value gold" id="m-facturado">$0</div><div class="metric-sub" id="m-facturado-sub"></div></div>
     </div>
     <div class="section-f" style="padding:20px 24px;">
@@ -810,8 +810,8 @@ body{font-family:'Montserrat',sans-serif;background:var(--bg);color:var(--text);
         <div><div id="pie-legend" style="display:flex;flex-direction:column;gap:12px;"></div></div>
       </div>
     </div>
-    <div class="section-f"><div class="section-header-f"><h2>Cuentas por cobrar</h2><span class="section-badge" id="badge-cobrar">0</span></div><table class="tbl"><thead><tr><th>#</th><th>Trabajo</th><th>Cliente</th><th>Forma de Pago</th><th class="right">Valor</th><th class="right">Abonado</th><th class="right">Saldo</th><th>Fecha límite</th></tr></thead><tbody id="body-cobrar"></tbody></table></div>
-    <div class="section-f"><div class="section-header-f" style="background:#b45309;"><h2>Cuentas por pagar</h2><span class="section-badge" id="badge-pagar">0</span></div><table class="tbl"><thead><tr><th>#</th><th>Concepto</th><th>Proveedor</th><th>Categoría</th><th>Forma de Pago</th><th class="right">Valor</th><th>Fecha límite</th></tr></thead><tbody id="body-pagar"></tbody></table></div>
+    <div class="section-f"><div class="section-header-f" style="background:#16a34a;"><h2>Cuentas por cobrar</h2><span class="section-badge" id="badge-cobrar">0</span></div><table class="tbl"><thead><tr><th>#</th><th>Trabajo</th><th>Cliente</th><th>Forma de Pago</th><th class="right">Valor</th><th class="right">Abonado</th><th class="right">Saldo</th><th>Fecha límite</th></tr></thead><tbody id="body-cobrar"></tbody></table></div>
+    <div class="section-f"><div class="section-header-f" style="background:#b91c1c;"><h2>Cuentas por pagar</h2><span class="section-badge" id="badge-pagar">0</span></div><table class="tbl"><thead><tr><th>#</th><th>Concepto</th><th>Proveedor</th><th>Categoría</th><th>Forma de Pago</th><th class="right">Valor</th><th>Fecha límite</th></tr></thead><tbody id="body-pagar"></tbody></table></div>
     <div class="section-f"><div class="section-header-f"><h2>Detalle por cliente</h2><span class="section-badge" id="badge-clientes">0</span></div><table class="tbl"><thead><tr><th>Cliente</th><th class="right">Ingresos</th><th class="right">Facturado</th><th class="right">Cobrado</th><th class="right">Saldo</th></tr></thead><tbody id="body-clientes"></tbody></table></div>
     <div class="section-f"><div class="section-header-f" style="background:#b45309;"><h2>Detalle por proveedor</h2><span class="section-badge" id="badge-proveedores">0</span></div><table class="tbl"><thead><tr><th>Proveedor</th><th class="right">Egresos</th><th class="right">Total</th><th class="right">Pagado</th><th class="right">Pendiente</th></tr></thead><tbody id="body-proveedores"></tbody></table></div>
     <div class="section-f"><div class="section-header-f" style="background:var(--blue-dark);"><h2>Detalle por categoría</h2><span class="section-badge" id="badge-categorias">0</span></div><table class="tbl"><thead><tr><th>Categoría</th><th class="right">Cantidad</th><th class="right">Total</th><th class="right">Pagado</th><th class="right">Pendiente</th></tr></thead><tbody id="body-categorias"></tbody></table></div>
@@ -1873,7 +1873,7 @@ function renderChart(fj,fe){
   document.getElementById('badge-chart').textContent=total>0?('Total: '+fmtM(total)):'Sin datos';
   const labels=['Ingresos','Egresos pag.','Por cobrar','Por pagar'];
   const data=[ingresos,egresos_p,cobrar,pagar];
-  const colors=['#2535a8','#c9a227','#4a5fd4','#e8bb45'];
+  const colors=['#2535a8','#c9a227','#16a34a','#b91c1c'];
   const pcts=data.map(d=>total>0?Math.round(d/total*100):0);
   document.getElementById('pie-legend').innerHTML=labels.map((l,i)=>`<div style="display:flex;align-items:center;gap:10px;"><div style="width:14px;height:14px;border-radius:3px;background:${colors[i]};flex-shrink:0;"></div><div><div style="font-size:13px;font-weight:600;">${l}</div><div style="font-size:12px;color:#6b7280;">${fmtM(data[i])} — ${pcts[i]}%</div></div></div>`).join('');
   const ctx=document.getElementById('pieChart').getContext('2d');
