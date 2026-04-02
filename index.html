@@ -328,7 +328,8 @@ body{font-family:'Montserrat',sans-serif;background:var(--bg);color:var(--text);
 .section-f{background:#fff;border:1px solid var(--border);border-radius:var(--radius-lg);margin-bottom:1.5rem;overflow:hidden;}
 .section-header-f{background:var(--blue);padding:12px 16px;display:flex;align-items:center;justify-content:space-between;}
 .section-header-f h2{font-size:13px;font-weight:700;color:#fff;text-transform:uppercase;letter-spacing:.6px;}
-[id^="body-wrap-"]{overflow:hidden;max-height:none;opacity:1;transition:max-height .35s ease,opacity .3s ease;}
+[id^="body-wrap-"]{overflow:hidden;max-height:0;opacity:0;transition:max-height .35s ease,opacity .3s ease;}
+[id^="arrow-"]{transform:rotate(-90deg);transition:transform .3s ease;}
 .section-badge{font-size:11px;font-weight:700;background:rgba(255,255,255,.2);color:#fff;padding:2px 10px;border-radius:99px;}
 .tbl{width:100%;border-collapse:collapse;font-size:13px;}
 .tbl .right{text-align:right;}
@@ -2349,7 +2350,10 @@ function deleteAbono(jobId, idx){
   const j=jobs.find(x=>x.id===jobId);
   if(!j||!j.abonos||!j.abonos[idx])return;
   const a=j.abonos[idx];
-  if(!confirm('¿Eliminar el abono de '+fmtM(parseFloat(a.monto)||0)+' ('+a.fp+' · '+a.fecha+')?'))return;
+  // Solicitar clave de administrador
+  const pwd=prompt('🔒 Ingresa la contraseña de administrador para eliminar el abono de '+fmtM(parseFloat(a.monto)||0)+' ('+a.fp+' · '+a.fecha+'):');
+  if(pwd===null)return; // canceló
+  if(pwd!==DEL_PWD){alert('❌ Contraseña incorrecta. No se eliminó el abono.');return;}
   j.abonos.splice(idx,1);
   j.abono=j.abonos.reduce((s,a)=>s+(parseFloat(a.monto)||0),0);
   const nuevoSaldo=(parseFloat(j.valor)||0)-j.abono;
@@ -2429,24 +2433,28 @@ function hideTrabajosAutocomplete(field){
 // ============================================================
 // COLAPSAR / EXPANDIR SECCIONES FINANCIERO
 // ============================================================
-const _seccionesState={cobrar:true,pagar:true,clientes:true,proveedores:true,categorias:true};
+const _seccionesState={cobrar:false,pagar:false,clientes:false,proveedores:false,categorias:false};
 function toggleSeccion(id){
   const wrap=document.getElementById('body-wrap-'+id);
   const arrow=document.getElementById('arrow-'+id);
   if(!wrap)return;
   _seccionesState[id]=!_seccionesState[id];
   if(_seccionesState[id]){
+    // Expandir
     wrap.style.maxHeight=wrap.scrollHeight+'px';
     wrap.style.opacity='1';
-    if(arrow){arrow.style.transform='rotate(0deg)';}
-    setTimeout(()=>{wrap.style.maxHeight='none';},350);
-  } else {
+    if(arrow)arrow.style.transform='rotate(0deg)';
+    setTimeout(()=>{if(_seccionesState[id])wrap.style.maxHeight='none';},380);
+  }else{
+    // Colapsar — primero fijar altura actual, luego animar a 0
     wrap.style.maxHeight=wrap.scrollHeight+'px';
     requestAnimationFrame(()=>{
-      wrap.style.maxHeight='0';
-      wrap.style.opacity='0';
+      requestAnimationFrame(()=>{
+        wrap.style.maxHeight='0';
+        wrap.style.opacity='0';
+      });
     });
-    if(arrow){arrow.style.transform='rotate(-90deg)';}
+    if(arrow)arrow.style.transform='rotate(-90deg)';
   }
 }
 
@@ -2848,6 +2856,9 @@ async function askDeleteEnc(id){
     return;
   }
   if(!confirm('¿Eliminar al encargado "' + enc.nombre + '"?')) return;
+  const pwd=prompt('🔒 Ingresa la contraseña de administrador para confirmar:');
+  if(pwd===null)return;
+  if(pwd!==DEL_PWD){alert('❌ Contraseña incorrecta. No se eliminó el encargado.');return;}
   encargados = encargados.filter(e => e.id !== id);
   await deleteEncargado(id);
   populateAllEncSelects();
