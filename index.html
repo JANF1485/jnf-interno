@@ -1966,7 +1966,19 @@ function renderFMetrics(fj,fe){
   fj.forEach(j=>{const r=abonosPorFP(j,selFP);ingEf+=r.ef;ingTr+=r.tr;});
   const ingresos=ingEf+ingTr;
   const facturado=fj.reduce((a,j)=>a+(parseFloat(j.valor)||0),0);
-  const cobrar=fj.reduce((a,j)=>a+Math.max(0,(parseFloat(j.valor)||0)-abonosPorFP(j,selFP).total),0);
+  // Con filtro: cobrar = saldo total de trabajos que pagaron en esa modalidad pero siguen con saldo
+  // Sin filtro: cobrar = saldo total de todos los trabajos
+  let cobrar=0;
+  if(selFP){
+    fj.forEach(j=>{
+      const r=abonosPorFP(j,''); // total real sin filtro
+      const saldoTotal=Math.max(0,(parseFloat(j.valor)||0)-r.total);
+      const rFP=abonosPorFP(j,selFP);
+      if(rFP.total>0&&saldoTotal>0) cobrar+=saldoTotal; // tiene pagos en esa modalidad y aún debe
+    });
+  } else {
+    cobrar=fj.reduce((a,j)=>a+Math.max(0,(parseFloat(j.valor)||0)-abonosPorFP(j,'').total),0);
+  }
   const egresosPagados=fe.filter(e=>e.col==='paid').reduce((a,e)=>a+(parseFloat(e.valor)||0),0);
   const egresosPendientes=fe.filter(e=>e.col==='pending').reduce((a,e)=>a+(parseFloat(e.valor)||0),0);
   const utilidad=ingresos-egresosPagados;
@@ -1975,7 +1987,10 @@ function renderFMetrics(fj,fe){
   document.getElementById('m-egresos').textContent=fmtM(egresosPagados);
   document.getElementById('m-egresos-sub').textContent=fe.filter(e=>e.col==='paid').length+' egreso(s) pagados';
   document.getElementById('m-cobrar').textContent=fmtM(cobrar);
-  document.getElementById('m-cobrar-sub').textContent=fj.filter(j=>Math.max(0,(parseFloat(j.valor)||0)-abonosPorFP(j,selFP).total)>0).length+' con saldo';
+  const conSaldo=selFP
+    ? fj.filter(j=>{const r=abonosPorFP(j,selFP);const s=Math.max(0,(parseFloat(j.valor)||0)-abonosPorFP(j,'').total);return r.total>0&&s>0;}).length
+    : fj.filter(j=>Math.max(0,(parseFloat(j.valor)||0)-abonosPorFP(j,'').total)>0).length;
+  document.getElementById('m-cobrar-sub').textContent=conSaldo+' con saldo';
   document.getElementById('m-pagar').textContent=fmtM(egresosPendientes);
   document.getElementById('m-pagar-sub').textContent=fe.filter(e=>e.col==='pending').length+' pendientes';
   document.getElementById('m-facturado').textContent=fmtM(facturado);
@@ -1990,7 +2005,16 @@ function renderChart(fj,fe){
   const selFP=(document.getElementById('f-filter-fp')||{}).value||'';
   const ingresos=fj.reduce((a,j)=>a+abonosPorFP(j,selFP).total,0);
   const egresos_p=fe.filter(e=>e.col==='paid').reduce((a,e)=>a+(parseFloat(e.valor)||0),0);
-  const cobrar=fj.reduce((a,j)=>a+Math.max(0,(parseFloat(j.valor)||0)-abonosPorFP(j,selFP).total),0);
+  let cobrar=0;
+  if(selFP){
+    fj.forEach(j=>{
+      const rFP=abonosPorFP(j,selFP);
+      const saldoTotal=Math.max(0,(parseFloat(j.valor)||0)-abonosPorFP(j,'').total);
+      if(rFP.total>0&&saldoTotal>0)cobrar+=saldoTotal;
+    });
+  } else {
+    cobrar=fj.reduce((a,j)=>a+Math.max(0,(parseFloat(j.valor)||0)-abonosPorFP(j,'').total),0);
+  }
   const pagar=fe.filter(e=>e.col==='pending').reduce((a,e)=>a+(parseFloat(e.valor)||0),0);
   const utilidad=ingresos-egresos_p;
   const total=ingresos+egresos_p+cobrar+pagar;
