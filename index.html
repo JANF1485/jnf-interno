@@ -540,13 +540,21 @@ body{font-family:'Montserrat',sans-serif;background:var(--bg);color:var(--text);
       </div>
     </div>
 
-    <!-- Modal Pago Trabajo -->
+    <!-- Modal Abono Trabajo -->
     <div class="modal-overlay" id="t-modal-pay-overlay">
       <div class="modal gold-top">
-        <h3>Registrar pago de saldo</h3><p id="t-modal-pay-msg"></p>
+        <h3>Registrar abono</h3>
+        <p id="t-modal-pay-msg" style="font-size:12px;color:#4b5563;margin-bottom:10px;"></p>
+        <!-- Historial previo de abonos -->
+        <div id="t-modal-abonos-hist" style="display:none;background:#f0f4ff;border-radius:8px;padding:8px 12px;margin-bottom:12px;">
+          <div style="font-size:9px;font-weight:800;color:#1a2580;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;">Abonos anteriores</div>
+          <div id="t-modal-abonos-list"></div>
+        </div>
+        <label class="modal-label">Monto del abono ($)<input type="number" id="t-modal-pay-monto" placeholder="0" min="0" style="font-family:inherit;"/></label>
         <label class="modal-label">Forma de pago<select id="t-modal-pay-fp"><option value="Efectivo">💵 Efectivo</option><option value="Transferencia">🏦 Transferencia</option></select></label>
-        <label class="modal-label">Fecha de pago<input type="date" id="t-modal-pay-date" style="font-family:inherit;"/></label>
-        <div class="modal-actions"><button class="btn-cancel" onclick="closeTPayModal()">Cancelar</button><button class="btn-confirm-pay-t" onclick="confirmTPago()">Confirmar pago</button></div>
+        <label class="modal-label">Fecha del abono<input type="date" id="t-modal-pay-date" style="font-family:inherit;"/></label>
+        <div class="modal-error" id="t-modal-pay-error" style="font-size:11px;color:#b91c1c;min-height:14px;margin-bottom:4px;"></div>
+        <div class="modal-actions"><button class="btn-cancel" onclick="closeTPayModal()">Cancelar</button><button class="btn-confirm-pay-t" onclick="confirmTPago()">Registrar abono</button></div>
       </div>
     </div>
     <!-- Modal Eliminar Trabajo (solo admin) -->
@@ -609,8 +617,18 @@ body{font-family:'Montserrat',sans-serif;background:var(--bg);color:var(--text);
     <div class="form-card">
       <h2>Registrar nuevo ingreso</h2>
       <div class="form-grid" style="grid-template-columns:2fr 1.5fr 1.5fr 1fr 1fr 0.55fr 0.55fr 1.2fr 1fr auto;gap:8px;max-width:100%;overflow:visible;">
-        <label>Nombre del trabajo<input type="text" id="t-inp-title" placeholder="Consultoría fiscal"/></label>
-        <label>Cliente<input type="text" id="t-inp-client" placeholder="Empresa ABC"/></label>
+        <label>Nombre del trabajo
+          <div style="position:relative;">
+            <input type="text" id="t-inp-title" placeholder="Consultoría fiscal" autocomplete="off" oninput="showTrabajosAutocomplete('title')" onkeydown="trabajosAutocompleteKeydown(event,'title')" onblur="setTimeout(()=>hideTrabajosAutocomplete('title'),200)"/>
+            <div id="t-autocomplete-title" style="display:none;position:absolute;top:100%;left:0;right:0;background:#fff;border:1.5px solid #c5caee;border-radius:0 0 8px 8px;z-index:500;max-height:150px;overflow-y:auto;box-shadow:0 4px 12px rgba(0,0,0,.1);"></div>
+          </div>
+        </label>
+        <label>Cliente
+          <div style="position:relative;">
+            <input type="text" id="t-inp-client" placeholder="Empresa ABC" autocomplete="off" oninput="showTrabajosAutocomplete('client')" onkeydown="trabajosAutocompleteKeydown(event,'client')" onblur="setTimeout(()=>hideTrabajosAutocomplete('client'),200)"/>
+            <div id="t-autocomplete-client" style="display:none;position:absolute;top:100%;left:0;right:0;background:#fff;border:1.5px solid #c5caee;border-radius:0 0 8px 8px;z-index:500;max-height:150px;overflow-y:auto;box-shadow:0 4px 12px rgba(0,0,0,.1);"></div>
+          </div>
+        </label>
         <label>Encargado
           <select id="t-inp-encargado" style="font-family:inherit;width:100%;">
             <option value="">— Sin encargado —</option>
@@ -1449,6 +1467,16 @@ function renderTrabajos(){
       if(j.paidDate)dt+=`<span class="badge paid-date">Pago: <b>${j.paidDate}</b></span>`;
       const safeTitle=j.title.replace(/'/g,"\\'").replace(/"/g,'&quot;');
       const adminBtns=isAdmin()?`<button class="btn-edit admin-only" onclick="openTEditModal('${j.id}')" style="display:inline-flex;">✏</button><button class="btn-del admin-only" onclick="askTDel('${j.id}','${safeTitle}')" style="display:inline-flex;">🗑</button>`:'';
+      // Historial de abonos
+      const abonos=j.abonos||[];
+      const histHtml=abonos.length?`<div style="background:#f8faff;border:1px solid #e8eaf6;border-radius:6px;padding:7px 10px;margin-bottom:8px;">
+        <div style="font-size:9px;font-weight:800;color:#1a2580;text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px;">💳 Historial de abonos</div>
+        ${abonos.map(a=>`<div style="display:flex;align-items:center;gap:6px;padding:3px 0;border-bottom:1px solid #e8eaf6;font-size:10px;">
+          <span style="font-weight:700;color:#166534;min-width:80px;">${fmtM(parseFloat(a.monto)||0)}</span>
+          ${a.fp==='Efectivo'?'<span style="background:#fef9c3;border:1px solid #ca8a04;color:#854d0e;font-size:9px;font-weight:700;padding:2px 7px;border-radius:99px;">💵 Efectivo</span>':'<span style="background:#dbeafe;border:1px solid #3b82f6;color:#1e40af;font-size:9px;font-weight:700;padding:2px 7px;border-radius:99px;">🏦 Transferencia</span>'}
+          <span style="color:#6b7280;margin-left:auto;">${a.fecha||''}</span>
+        </div>`).join('')}
+      </div>`:'';
       return`<div class="${cardCls}">
         <div class="card-header"><span class="card-num">#${j.num}</span><span class="card-title">${j.title}</span></div>
         <div class="card-client">${j.client||'Sin cliente'}</div>
@@ -1460,10 +1488,11 @@ function renderTrabajos(){
           <div class="fin-item"><div class="fin-label">Abono</div><div class="fin-val">${fmtM(ab)}</div></div>
           <div class="fin-item"><div class="fin-label">Saldo</div><div class="${sdCls}">${fmtM(sd)}</div></div>
         </div>
+        ${histHtml}
         <div class="card-footer">
           <span class="card-created">Creado: ${j.created}</span>
           <div class="card-actions">
-            ${sd>0?`<button class="btn-pagar-t" onclick="askTPago('${j.id}')">Registrar pago</button>`:''}
+            ${sd>0?`<button class="btn-pagar-t" onclick="askTPago('${j.id}')">+ Abono</button>`:''}
             ${T_PREV[col]?`<button class="btn-mv" onclick="moveTBack('${j.id}')">← ${T_PREV[col]}</button>`:''}
             ${T_NEXT[col]?`<button class="btn-mv" onclick="moveTNext('${j.id}')">${T_NEXT[col]} →</button>`:''}
             ${adminBtns}
@@ -1506,24 +1535,54 @@ function addTCard(){
 
 function askTPago(id){
   tPendingPayId=id;
-  const j=jobs.find(x=>x.id===id);
-  document.getElementById('t-modal-pay-msg').textContent='Confirmar pago del saldo de "'+j.title+'" ('+fmtM((parseFloat(j.valor)||0)-(parseFloat(j.abono)||0))+')';
-  document.getElementById('t-modal-pay-fp').value=j.fp||'Efectivo';
-  // Precargar con la fecha de hoy
+  const j=jobs.find(x=>x.id===id);if(!j)return;
+  const sd=(parseFloat(j.valor)||0)-(parseFloat(j.abono)||0);
+  document.getElementById('t-modal-pay-msg').textContent='"'+j.title+'" · '+j.client+' · Saldo: '+fmtM(sd);
+  document.getElementById('t-modal-pay-fp').value='Efectivo';
+  document.getElementById('t-modal-pay-monto').value=sd>0?sd:'';
+  document.getElementById('t-modal-pay-error').textContent='';
   const hoy=new Date().toISOString().slice(0,10);
   document.getElementById('t-modal-pay-date').value=hoy;
+  // Mostrar historial previo
+  const abonos=j.abonos||[];
+  const histWrap=document.getElementById('t-modal-abonos-hist');
+  const histList=document.getElementById('t-modal-abonos-list');
+  if(abonos.length){
+    histWrap.style.display='block';
+    histList.innerHTML=abonos.map(a=>`<div style="display:flex;align-items:center;gap:6px;padding:3px 0;font-size:10px;border-bottom:1px solid #e8eaf6;">
+      <span style="font-weight:700;color:#166534;min-width:75px;">${fmtM(parseFloat(a.monto)||0)}</span>
+      ${a.fp==='Efectivo'?'<span style="background:#fef9c3;border:1px solid #ca8a04;color:#854d0e;font-size:9px;font-weight:700;padding:1px 7px;border-radius:99px;">💵 Efectivo</span>':'<span style="background:#dbeafe;border:1px solid #3b82f6;color:#1e40af;font-size:9px;font-weight:700;padding:1px 7px;border-radius:99px;">🏦 Transferencia</span>'}
+      <span style="margin-left:auto;color:#6b7280;">${a.fecha||''}</span>
+    </div>`).join('');
+  } else {
+    histWrap.style.display='none';
+  }
   document.getElementById('t-modal-pay-overlay').classList.add('active');
 }
 function closeTPayModal(){tPendingPayId=null;document.getElementById('t-modal-pay-overlay').classList.remove('active');}
 function confirmTPago(){
   const j=jobs.find(x=>x.id===tPendingPayId);if(!j)return;
-  const fechaPago=document.getElementById('t-modal-pay-date').value;
-  j.abono=parseFloat(j.valor)||0;
-  // Convertir fecha a formato DD/MM/YYYY si se ingresó
-  if(fechaPago){const[y,m,d]=fechaPago.split('-');j.paidDate=d+'/'+m+'/'+y;}
-  else{j.paidDate=todayStr();}
-  j.fp=document.getElementById('t-modal-pay-fp').value;
-  const jp=jobs.find(x=>x.id===tPendingPayId); closeTPayModal(); if(jp) saveJob(jp);
+  const monto=parseFloat(document.getElementById('t-modal-pay-monto').value)||0;
+  const errEl=document.getElementById('t-modal-pay-error');
+  const sd=(parseFloat(j.valor)||0)-(parseFloat(j.abono)||0);
+  if(monto<=0){errEl.textContent='Ingresa un monto mayor a cero.';return;}
+  if(monto>sd+0.01){errEl.textContent='El monto supera el saldo pendiente ('+fmtM(sd)+').';return;}
+  errEl.textContent='';
+  const fp=document.getElementById('t-modal-pay-fp').value;
+  const fechaInp=document.getElementById('t-modal-pay-date').value;
+  let fechaFmt=todayStr();
+  if(fechaInp){const[y,m,d]=fechaInp.split('-');fechaFmt=d+'/'+m+'/'+y;}
+  // Agregar al historial de abonos
+  if(!j.abonos)j.abonos=[];
+  j.abonos.push({monto,fp,fecha:fechaFmt});
+  // Actualizar abono total
+  j.abono=(parseFloat(j.abono)||0)+monto;
+  // Si saldo es 0, registrar paidDate y fp del último abono
+  const nuevoSaldo=(parseFloat(j.valor)||0)-j.abono;
+  if(nuevoSaldo<=0){j.paidDate=fechaFmt;j.fp=fp;}
+  const jp=jobs.find(x=>x.id===tPendingPayId);
+  closeTPayModal();
+  if(jp)saveJob(jp);
 }
 function moveTNext(id){const j=jobs.find(x=>x.id===id);if(!j)return;const i=T_COLS.indexOf(j.col);if(i<T_COLS.length-1){j.col=T_COLS[i+1];if(j.col==='done')j.doneDate=todayStr();saveJob(j);}}
 function moveTBack(id){const j=jobs.find(x=>x.id===id);if(!j)return;const i=T_COLS.indexOf(j.col);if(i>0){j.col=T_COLS[i-1];if(j.col!=='done')j.doneDate=null;saveJob(j);}}
@@ -2200,6 +2259,74 @@ async function deleteUser(uid, nombre){
       alert('Error: '+e.message);
     }
   }
+}
+
+// ============================================================
+// AUTOCOMPLETAR TRABAJOS (título y cliente)
+// ============================================================
+const _acIdxT={title:-1,client:-1};
+
+function getTrabajosUniqueValues(field){
+  const seen=new Set();
+  jobs.forEach(j=>{
+    const val=(field==='title'?j.title:j.client)||'';
+    if(val.trim())seen.add(val.trim());
+  });
+  return[...seen].sort();
+}
+
+function showTrabajosAutocomplete(field){
+  _acIdxT[field]=-1;
+  const inputId='t-inp-'+field;
+  const dropId='t-autocomplete-'+field;
+  const input=document.getElementById(inputId);
+  const drop=document.getElementById(dropId);
+  if(!input||!drop)return;
+  const q=input.value.trim().toLowerCase();
+  const all=getTrabajosUniqueValues(field);
+  const matches=q?all.filter(v=>v.toLowerCase().includes(q)&&v.toLowerCase()!==q):all;
+  if(!matches.length){drop.style.display='none';return;}
+  drop.innerHTML=matches.slice(0,8).map((v,i)=>`<div data-idx="${i}" data-val="${v.replace(/"/g,'&quot;')}" onclick="selectTrabajosAutocomplete('${field}','${v.replace(/'/g,"\\'")}');return false;" style="padding:8px 12px;font-size:12px;cursor:pointer;border-bottom:1px solid #e8eaf6;color:#1a2580;font-family:inherit;" onmouseover="setAcIdxT('${field}',${i})">${v}</div>`).join('');
+  drop.style.display='block';
+}
+
+function setAcIdxT(field,i){
+  _acIdxT[field]=i;
+  _highlightAcT(field);
+}
+
+function _highlightAcT(field){
+  const drop=document.getElementById('t-autocomplete-'+field);
+  if(!drop)return;
+  drop.querySelectorAll('div').forEach((el,i)=>{
+    el.style.background=i===_acIdxT[field]?'#c5caee':'';
+    el.style.fontWeight=i===_acIdxT[field]?'700':'400';
+  });
+}
+
+function trabajosAutocompleteKeydown(event,field){
+  const drop=document.getElementById('t-autocomplete-'+field);
+  if(!drop||drop.style.display==='none')return;
+  const items=drop.querySelectorAll('div');
+  if(!items.length)return;
+  if(event.key==='ArrowDown'){event.preventDefault();_acIdxT[field]=Math.min(_acIdxT[field]+1,items.length-1);_highlightAcT(field);}
+  else if(event.key==='ArrowUp'){event.preventDefault();_acIdxT[field]=Math.max(_acIdxT[field]-1,0);_highlightAcT(field);}
+  else if(event.key==='Enter'||event.key==='Tab'){if(_acIdxT[field]>=0&&items[_acIdxT[field]]){event.preventDefault();selectTrabajosAutocomplete(field,items[_acIdxT[field]].dataset.val);}}
+  else if(event.key==='Escape'){hideTrabajosAutocomplete(field);}
+}
+
+function selectTrabajosAutocomplete(field,value){
+  const input=document.getElementById('t-inp-'+field);
+  const drop=document.getElementById('t-autocomplete-'+field);
+  if(input)input.value=value;
+  if(drop)drop.style.display='none';
+  _acIdxT[field]=-1;
+}
+
+function hideTrabajosAutocomplete(field){
+  const drop=document.getElementById('t-autocomplete-'+field);
+  if(drop)drop.style.display='none';
+  _acIdxT[field]=-1;
 }
 
 // ============================================================
