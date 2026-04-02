@@ -698,6 +698,7 @@ body{font-family:'Montserrat',sans-serif;background:var(--bg);color:var(--text);
         <label class="modal-label">Categoría<select id="ee-cat"><option value="Arriendo">Arriendo</option><option value="Cafetería">Cafetería</option><option value="Educación">Educación</option><option value="Honorarios">Honorarios</option><option value="Impuestos">Impuestos</option><option value="Nómina">Nómina</option><option value="Papelería">Papelería</option><option value="Publicidad">Publicidad</option><option value="Servicios públicos">Servicios públicos</option><option value="Tecnología">Tecnología</option><option value="Transporte">Transporte</option><option value="Otro">Otro</option></select></label>
         <label class="modal-label">Valor ($)<input type="number" id="ee-valor" min="0"/></label>
         <label class="modal-label">Fecha límite<input type="date" id="ee-fecha"/></label>
+        <label class="modal-label">Fecha de pago<input type="date" id="ee-paiddate" title="Fecha real del pago (independiente del registro)"/></label>
         <label class="modal-label">Forma de pago<select id="ee-fp"><option value="">— Sin especificar —</option><option value="Efectivo">💵 Efectivo</option><option value="Transferencia">🏦 Transferencia</option></select></label>
         <div class="modal-error" id="ee-error"></div>
         <div class="modal-actions"><button class="btn-cancel" onclick="closeEEditModal()">Cancelar</button><button class="btn-primary" onclick="confirmEEdit()">Guardar cambios</button></div>
@@ -725,7 +726,7 @@ body{font-family:'Montserrat',sans-serif;background:var(--bg);color:var(--text);
 
     <div class="form-card">
       <h2>Registrar nuevo egreso</h2>
-      <div class="form-grid" style="grid-template-columns:2fr 1.5fr 1.5fr 1fr 1.2fr 1.2fr 1fr auto;gap:8px;max-width:100%;overflow:visible;">
+      <div class="form-grid" style="grid-template-columns:1.8fr 1.8fr 1.4fr 0.8fr 1fr 1fr 1.1fr 0.9fr auto;gap:8px;max-width:100%;overflow:visible;">
         <label>Descripción
           <div style="position:relative;">
             <input type="text" id="e-inp-desc" placeholder="Pago arriendo" autocomplete="off" oninput="showEgresosAutocomplete('desc')" onblur="setTimeout(()=>hideEgresosAutocomplete('desc'),200)"/>
@@ -740,7 +741,8 @@ body{font-family:'Montserrat',sans-serif;background:var(--bg);color:var(--text);
         </label>
         <label>Categoría<select id="e-inp-cat"><option value="Arriendo">Arriendo</option><option value="Cafetería">Cafetería</option><option value="Educación">Educación</option><option value="Honorarios">Honorarios</option><option value="Impuestos">Impuestos</option><option value="Nómina">Nómina</option><option value="Papelería">Papelería</option><option value="Publicidad">Publicidad</option><option value="Servicios públicos">Servicios públicos</option><option value="Tecnología">Tecnología</option><option value="Transporte">Transporte</option><option value="Otro">Otro</option></select></label>
         <label>Valor ($)<input type="number" id="e-inp-valor" placeholder="0" min="0"/></label>
-        <label>Fecha límite<input type="date" id="e-inp-fecha"/></label>
+        <label>F. límite<input type="date" id="e-inp-fecha"/></label>
+        <label>F. pago<input type="date" id="e-inp-paiddate" title="Fecha en que se realizó o realizará el pago (independiente del registro)"/></label>
         <label>Forma de pago<select id="e-inp-fp"><option value="">— Sin especificar —</option><option value="Efectivo">💵 Efectivo</option><option value="Transferencia">🏦 Transferencia</option></select></label>
         <label>Estado<select id="e-inp-col"><option value="pending">Pendiente</option><option value="paid">Pagado</option></select></label>
         <label style="justify-content:flex-end;"><button class="btn-add" onclick="addEgresoCard()">+ Registrar</button></label>
@@ -1694,6 +1696,10 @@ function addEgresoCard(){
   if(!desc){alert('Por favor ingresa la descripción.');return;}
   eCounter++;
   const col=document.getElementById('e-inp-col').value;
+  const paidDateInp=document.getElementById('e-inp-paiddate').value;
+  let paidDateFmt=null;
+  if(paidDateInp){const[y,m,d]=paidDateInp.split('-');paidDateFmt=d+'/'+m+'/'+y;}
+  else if(col==='paid'){paidDateFmt=todayStr();}
   egresos.push({
     id:Date.now().toString(),num:eCounter,desc,
     prov:document.getElementById('e-inp-prov').value.trim(),
@@ -1702,10 +1708,10 @@ function addEgresoCard(){
     fecha:document.getElementById('e-inp-fecha').value,
     fp:document.getElementById('e-inp-fp').value,
     col,created:todayStr(),
-    paidDate:col==='paid'?todayStr():null,
+    paidDate:paidDateFmt,
     registradoPor:window._perfil?window._perfil.nombre||window._perfil.email:'desconocido'
   });
-  ['e-inp-desc','e-inp-prov','e-inp-valor','e-inp-fecha'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  ['e-inp-desc','e-inp-prov','e-inp-valor','e-inp-fecha','e-inp-paiddate'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
   const nuevoEgr=egresos[egresos.length-1];
   saveEgresos();
   saveEgreso(nuevoEgr);
@@ -1758,6 +1764,9 @@ function openEEditModal(id){
   document.getElementById('ee-cat').value=e.cat||'Otro';
   document.getElementById('ee-valor').value=e.valor||'';
   document.getElementById('ee-fecha').value=e.fecha||'';
+  // Convertir paidDate DD/MM/YYYY a YYYY-MM-DD para el input date
+  if(e.paidDate){const parts=e.paidDate.split('/');if(parts.length===3)document.getElementById('ee-paiddate').value=parts[2]+'-'+parts[1]+'-'+parts[0];else document.getElementById('ee-paiddate').value='';}
+  else{document.getElementById('ee-paiddate').value='';}
   document.getElementById('ee-fp').value=e.fp||'';
   document.getElementById('ee-error').textContent='';
   document.getElementById('e-modal-edit-overlay').classList.add('active');
@@ -1772,6 +1781,9 @@ function confirmEEdit(){
   e.cat=document.getElementById('ee-cat').value;
   e.valor=document.getElementById('ee-valor').value;
   e.fecha=document.getElementById('ee-fecha').value;
+  const eePaidInp=document.getElementById('ee-paiddate').value;
+  if(eePaidInp){const[y,m,d]=eePaidInp.split('-');e.paidDate=d+'/'+m+'/'+y;}
+  else if(e.col!=='paid'){e.paidDate=null;}
   e.fp=document.getElementById('ee-fp').value;
   const eedit=egresos.find(x=>x.id===ePendingEditId); closeEEditModal(); if(eedit) saveEgreso(eedit);
 }
