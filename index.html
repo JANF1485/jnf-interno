@@ -544,6 +544,7 @@ body{font-family:'Montserrat',sans-serif;background:var(--bg);color:var(--text);
       <div class="modal gold-top">
         <h3>Registrar pago de saldo</h3><p id="t-modal-pay-msg"></p>
         <label class="modal-label">Forma de pago<select id="t-modal-pay-fp"><option value="Efectivo">💵 Efectivo</option><option value="Transferencia">🏦 Transferencia</option></select></label>
+        <label class="modal-label">Fecha de pago<input type="date" id="t-modal-pay-date" style="font-family:inherit;"/></label>
         <div class="modal-actions"><button class="btn-cancel" onclick="closeTPayModal()">Cancelar</button><button class="btn-confirm-pay-t" onclick="confirmTPago()">Confirmar pago</button></div>
       </div>
     </div>
@@ -594,6 +595,12 @@ body{font-family:'Montserrat',sans-serif;background:var(--bg);color:var(--text);
       <select class="period-select" id="t-period-year" onchange="renderTrabajos()">
         <option value="">— Todos los años —</option>
       </select>
+      <label style="font-size:11px;font-weight:700;color:var(--text2);white-space:nowrap;">Forma de pago:</label>
+      <select class="period-select" id="t-filter-fp" onchange="renderTrabajos()">
+        <option value="">— Todas —</option>
+        <option value="Efectivo">💵 Efectivo</option>
+        <option value="Transferencia">🏦 Transferencia</option>
+      </select>
       <span class="period-badge" id="t-period-badge">Todos los registros</span>
       <button class="btn-period-all" onclick="clearTPeriod()">Ver todos</button>
     </div>
@@ -633,7 +640,16 @@ body{font-family:'Montserrat',sans-serif;background:var(--bg);color:var(--text);
     </div>
     <div class="export-bar" style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
       <button class="btn-export" onclick="exportExcelTrabajos()"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>Exportar Excel</button>
-      <div style="display:flex;align-items:center;gap:6px;margin-left:auto;flex-wrap:wrap;">
+      <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;flex:1;">
+        <!-- Búsqueda por nombre de trabajo -->
+        <span style="font-size:11px;font-weight:700;color:#1a2580;white-space:nowrap;">🔍 Buscar trabajo:</span>
+        <input type="text" id="t-search-title" placeholder="Nombre del trabajo..." oninput="renderTrabajos()" style="font-size:11px;border:1.5px solid #dde1f0;border-radius:7px;padding:5px 10px;font-family:inherit;color:#1a2580;background:#f8faff;width:160px;"/>
+        <!-- Búsqueda por cliente -->
+        <span style="font-size:11px;font-weight:700;color:#1a2580;white-space:nowrap;">👤 Buscar cliente:</span>
+        <input type="text" id="t-search-client" placeholder="Nombre del cliente..." oninput="renderTrabajos()" style="font-size:11px;border:1.5px solid #dde1f0;border-radius:7px;padding:5px 10px;font-family:inherit;color:#1a2580;background:#f8faff;width:160px;"/>
+        <button onclick="document.getElementById('t-search-title').value='';document.getElementById('t-search-client').value='';renderTrabajos();" style="font-size:10px;background:#f3f4f6;border:1px solid #dde1f0;border-radius:6px;padding:5px 8px;cursor:pointer;color:#6b7280;font-family:inherit;" title="Limpiar búsqueda">✕ Limpiar</button>
+      </div>
+      <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
         <span style="font-size:11px;font-weight:700;color:#1a2580;white-space:nowrap;">Filtrar por persona:</span>
         <select id="t-filter-persona" onchange="renderTrabajos()" style="font-size:11px;border:1.5px solid #dde1f0;border-radius:7px;padding:5px 10px;font-family:inherit;color:#1a2580;background:#f8faff;">
           <option value="">— Todas las personas —</option>
@@ -662,6 +678,7 @@ body{font-family:'Montserrat',sans-serif;background:var(--bg);color:var(--text);
       <div class="modal green-top">
         <h3>Marcar egreso como pagado</h3><p id="e-modal-pay-msg"></p>
         <label class="modal-label">Forma de pago<select id="e-modal-pay-fp"><option value="Efectivo">💵 Efectivo</option><option value="Transferencia">🏦 Transferencia</option></select></label>
+        <label class="modal-label">Fecha de pago<input type="date" id="e-modal-pay-date" style="font-family:inherit;"/></label>
         <div class="modal-actions"><button class="btn-cancel" onclick="closePayModalEgr()">Cancelar</button><button class="btn-confirm-pay-e" onclick="confirmPagoEgr()">Confirmar</button></div>
       </div>
     </div>
@@ -698,6 +715,12 @@ body{font-family:'Montserrat',sans-serif;background:var(--bg);color:var(--text);
       <select class="period-select" id="e-period-year" onchange="renderEgresos()">
         <option value="">— Todos los años —</option>
       </select>
+      <label style="font-size:11px;font-weight:700;color:var(--text2);white-space:nowrap;">Forma de pago:</label>
+      <select class="period-select" id="e-filter-fp" onchange="renderEgresos()">
+        <option value="">— Todas —</option>
+        <option value="Efectivo">💵 Efectivo</option>
+        <option value="Transferencia">🏦 Transferencia</option>
+      </select>
       <span class="period-badge" id="e-period-badge">Todos los registros</span>
       <button class="btn-period-all" onclick="clearEPeriod()">Ver todos</button>
     </div>
@@ -705,8 +728,18 @@ body{font-family:'Montserrat',sans-serif;background:var(--bg);color:var(--text);
     <div class="form-card">
       <h2>Registrar nuevo egreso</h2>
       <div class="form-grid" style="grid-template-columns:2fr 1.5fr 1.5fr 1fr 1.2fr 1.2fr 1fr auto;gap:8px;max-width:100%;overflow:visible;">
-        <label>Descripción<input type="text" id="e-inp-desc" placeholder="Pago arriendo"/></label>
-        <label>Proveedor<input type="text" id="e-inp-prov" placeholder="Inmobiliaria XYZ"/></label>
+        <label>Descripción
+          <div style="position:relative;">
+            <input type="text" id="e-inp-desc" placeholder="Pago arriendo" autocomplete="off" oninput="showEgresosAutocomplete('desc')" onblur="setTimeout(()=>hideEgresosAutocomplete('desc'),200)"/>
+            <div id="e-autocomplete-desc" style="display:none;position:absolute;top:100%;left:0;right:0;background:#fff;border:1.5px solid #c5caee;border-radius:0 0 8px 8px;z-index:500;max-height:150px;overflow-y:auto;box-shadow:0 4px 12px rgba(0,0,0,.1);"></div>
+          </div>
+        </label>
+        <label>Proveedor
+          <div style="position:relative;">
+            <input type="text" id="e-inp-prov" placeholder="Inmobiliaria XYZ" autocomplete="off" oninput="showEgresosAutocomplete('prov')" onblur="setTimeout(()=>hideEgresosAutocomplete('prov'),200)"/>
+            <div id="e-autocomplete-prov" style="display:none;position:absolute;top:100%;left:0;right:0;background:#fff;border:1.5px solid #c5caee;border-radius:0 0 8px 8px;z-index:500;max-height:150px;overflow-y:auto;box-shadow:0 4px 12px rgba(0,0,0,.1);"></div>
+          </div>
+        </label>
         <label>Categoría<select id="e-inp-cat"><option value="Arriendo">Arriendo</option><option value="Cafetería">Cafetería</option><option value="Educación">Educación</option><option value="Honorarios">Honorarios</option><option value="Impuestos">Impuestos</option><option value="Nómina">Nómina</option><option value="Papelería">Papelería</option><option value="Publicidad">Publicidad</option><option value="Servicios públicos">Servicios públicos</option><option value="Tecnología">Tecnología</option><option value="Transporte">Transporte</option><option value="Otro">Otro</option></select></label>
         <label>Valor ($)<input type="number" id="e-inp-valor" placeholder="0" min="0"/></label>
         <label>Fecha límite<input type="date" id="e-inp-fecha"/></label>
@@ -780,6 +813,12 @@ body{font-family:'Montserrat',sans-serif;background:var(--bg);color:var(--text);
       </select>
       <select class="period-select" id="i-period-year" onchange="renderIngresos()">
         <option value="">— Todos los años —</option>
+      </select>
+      <label style="font-size:11px;font-weight:700;color:var(--text2);white-space:nowrap;">Forma de pago:</label>
+      <select class="period-select" id="i-filter-fp" onchange="renderIngresos()">
+        <option value="">— Todas —</option>
+        <option value="Efectivo">💵 Efectivo</option>
+        <option value="Transferencia">🏦 Transferencia</option>
       </select>
       <span class="period-badge" id="i-period-badge">Todos los registros</span>
       <button class="btn-period-all" onclick="clearIPeriod()">Ver todos</button>
@@ -1220,11 +1259,16 @@ function updatePeriodBadge(prefix,count,total){
 
 function clearTPeriod(){
   const ms=document.getElementById('t-period-month');const ys=document.getElementById('t-period-year');
-  if(ms)ms.value='';if(ys)ys.value='';renderTrabajos();
+  const fps=document.getElementById('t-filter-fp');
+  const st=document.getElementById('t-search-title');const sc=document.getElementById('t-search-client');
+  if(ms)ms.value='';if(ys)ys.value='';if(fps)fps.value='';if(st)st.value='';if(sc)sc.value='';
+  renderTrabajos();
 }
 function clearEPeriod(){
   const ms=document.getElementById('e-period-month');const ys=document.getElementById('e-period-year');
-  if(ms)ms.value='';if(ys)ys.value='';renderEgresos();
+  const fps=document.getElementById('e-filter-fp');
+  if(ms)ms.value='';if(ys)ys.value='';if(fps)fps.value='';
+  renderEgresos();
 }
 function clearFPeriod(){
   const ms=document.getElementById('f-period-month');const ys=document.getElementById('f-period-year');
@@ -1345,10 +1389,16 @@ function renderTSummary(filteredJobs){
 
 function renderTrabajos(){
   const fPersonaTrab=(document.getElementById('t-filter-persona')||{}).value||'';
+  const fSearchTitle=((document.getElementById('t-search-title')||{}).value||'').toLowerCase().trim();
+  const fSearchClient=((document.getElementById('t-search-client')||{}).value||'').toLowerCase().trim();
+  const fFP=((document.getElementById('t-filter-fp')||{}).value||'');
   const filteredJobs=jobs.filter(j=>{
     if(!itemMatchesPeriod(j,'t')) return false;
-    if(!fPersonaTrab) return true;
-    return j.encargado===fPersonaTrab||(j.personas||[]).includes(fPersonaTrab);
+    if(fPersonaTrab && j.encargado!==fPersonaTrab && !(j.personas||[]).includes(fPersonaTrab)) return false;
+    if(fSearchTitle && !(j.title||'').toLowerCase().includes(fSearchTitle)) return false;
+    if(fSearchClient && !(j.client||'').toLowerCase().includes(fSearchClient)) return false;
+    if(fFP && j.fp!==fFP) return false;
+    return true;
   });
   updatePeriodBadge('t',filteredJobs.length,jobs.length);
   T_COLS.forEach(col=>{
@@ -1437,12 +1487,20 @@ function askTPago(id){
   const j=jobs.find(x=>x.id===id);
   document.getElementById('t-modal-pay-msg').textContent='Confirmar pago del saldo de "'+j.title+'" ('+fmtM((parseFloat(j.valor)||0)-(parseFloat(j.abono)||0))+')';
   document.getElementById('t-modal-pay-fp').value=j.fp||'Efectivo';
+  // Precargar con la fecha de hoy
+  const hoy=new Date().toISOString().slice(0,10);
+  document.getElementById('t-modal-pay-date').value=hoy;
   document.getElementById('t-modal-pay-overlay').classList.add('active');
 }
 function closeTPayModal(){tPendingPayId=null;document.getElementById('t-modal-pay-overlay').classList.remove('active');}
 function confirmTPago(){
   const j=jobs.find(x=>x.id===tPendingPayId);if(!j)return;
-  j.abono=parseFloat(j.valor)||0;j.paidDate=todayStr();j.fp=document.getElementById('t-modal-pay-fp').value;
+  const fechaPago=document.getElementById('t-modal-pay-date').value;
+  j.abono=parseFloat(j.valor)||0;
+  // Convertir fecha a formato DD/MM/YYYY si se ingresó
+  if(fechaPago){const[y,m,d]=fechaPago.split('-');j.paidDate=d+'/'+m+'/'+y;}
+  else{j.paidDate=todayStr();}
+  j.fp=document.getElementById('t-modal-pay-fp').value;
   const jp=jobs.find(x=>x.id===tPendingPayId); closeTPayModal(); if(jp) saveJob(jp);
 }
 function moveTNext(id){const j=jobs.find(x=>x.id===id);if(!j)return;const i=T_COLS.indexOf(j.col);if(i<T_COLS.length-1){j.col=T_COLS[i+1];if(j.col==='done')j.doneDate=todayStr();saveJob(j);}}
@@ -1583,7 +1641,12 @@ function renderEgresosSummary(filteredEgresos){
 }
 
 function renderEgresos(){
-  const filteredEgresos=egresos.filter(e=>itemMatchesPeriod(e,'e'));
+  const fFPEgr=((document.getElementById('e-filter-fp')||{}).value||'');
+  const filteredEgresos=egresos.filter(e=>{
+    if(!itemMatchesPeriod(e,'e')) return false;
+    if(fFPEgr && e.fp!==fFPEgr) return false;
+    return true;
+  });
   updatePeriodBadge('e',filteredEgresos.length,egresos.length);
   ['pending','paid'].forEach(col=>{
     const cont=document.getElementById('e-cards-'+col);if(!cont)return;
@@ -1655,12 +1718,19 @@ function askPagoEgr(id){
   const e=egresos.find(x=>x.id===id);
   document.getElementById('e-modal-pay-msg').textContent='Confirmar pago de "'+e.desc+'" — '+fmtM(parseFloat(e.valor)||0);
   document.getElementById('e-modal-pay-fp').value=e.fp||'Efectivo';
+  // Precargar con la fecha de hoy
+  const hoy=new Date().toISOString().slice(0,10);
+  document.getElementById('e-modal-pay-date').value=hoy;
   document.getElementById('e-modal-pay-overlay').classList.add('active');
 }
 function closePayModalEgr(){ePendingPayId=null;document.getElementById('e-modal-pay-overlay').classList.remove('active');}
 function confirmPagoEgr(){
   const e=egresos.find(x=>x.id===ePendingPayId);if(!e)return;
-  e.col='paid';e.paidDate=todayStr();e.fp=document.getElementById('e-modal-pay-fp').value;
+  e.col='paid';
+  const fechaPagoEgr=document.getElementById('e-modal-pay-date').value;
+  if(fechaPagoEgr){const[y,m,d]=fechaPagoEgr.split('-');e.paidDate=d+'/'+m+'/'+y;}
+  else{e.paidDate=todayStr();}
+  e.fp=document.getElementById('e-modal-pay-fp').value;
   const ep=egresos.find(x=>x.id===ePendingPayId); closePayModalEgr(); if(ep) saveEgreso(ep);
 }
 function moverPendienteEgr(id){const e=egresos.find(x=>x.id===id);if(!e)return;e.col='pending';e.paidDate=null;saveEgreso(e);}
@@ -2064,6 +2134,56 @@ async function deleteUser(uid, nombre){
 }
 
 // ============================================================
+// AUTOCOMPLETAR EGRESOS (descripción y proveedor)
+// ============================================================
+function getEgresosUniqueValues(field){
+  const seen=new Set();
+  egresos.forEach(e=>{
+    const val=(field==='desc'?e.desc:e.prov)||'';
+    if(val.trim())seen.add(val.trim());
+  });
+  return [...seen].sort();
+}
+
+function showEgresosAutocomplete(field){
+  const inputId=field==='desc'?'e-inp-desc':'e-inp-prov';
+  const dropId='e-autocomplete-'+field;
+  const input=document.getElementById(inputId);
+  const drop=document.getElementById(dropId);
+  if(!input||!drop)return;
+  const q=input.value.trim().toLowerCase();
+  const all=getEgresosUniqueValues(field);
+  const matches=q?all.filter(v=>v.toLowerCase().includes(q)&&v.toLowerCase()!==q):all;
+  if(!matches.length){drop.style.display='none';return;}
+  drop.innerHTML=matches.slice(0,8).map(v=>`<div onclick="selectEgresosAutocomplete('${field}','${v.replace(/'/g,"\\'")}');return false;" style="padding:8px 12px;font-size:12px;cursor:pointer;border-bottom:1px solid #e8eaf6;color:#1a2580;font-family:inherit;" onmouseover="this.style.background='#e8eaf6'" onmouseout="this.style.background=''">${v}</div>`).join('');
+  drop.style.display='block';
+}
+
+function selectEgresosAutocomplete(field,value){
+  const inputId=field==='desc'?'e-inp-desc':'e-inp-prov';
+  const dropId='e-autocomplete-'+field;
+  const input=document.getElementById(inputId);
+  const drop=document.getElementById(dropId);
+  if(input)input.value=value;
+  if(drop)drop.style.display='none';
+  // Si seleccionó descripción, autocompletar también categoría y proveedor
+  if(field==='desc'){
+    const egreso=egresos.find(e=>e.desc===value);
+    if(egreso){
+      const catEl=document.getElementById('e-inp-cat');
+      const provEl=document.getElementById('e-inp-prov');
+      if(catEl&&egreso.cat)catEl.value=egreso.cat;
+      if(provEl&&egreso.prov&&!provEl.value)provEl.value=egreso.prov;
+    }
+  }
+}
+
+function hideEgresosAutocomplete(field){
+  const drop=document.getElementById('e-autocomplete-'+field);
+  if(drop)drop.style.display='none';
+}
+
+// ============================================================
 // INIT
 // ============================================================
 
@@ -2073,7 +2193,8 @@ async function deleteUser(uid, nombre){
 function clearIPeriod(){
   const ms=document.getElementById('i-period-month');
   const ys=document.getElementById('i-period-year');
-  if(ms)ms.value='';if(ys)ys.value='';renderIngresos();
+  const fps=document.getElementById('i-filter-fp');
+  if(ms)ms.value='';if(ys)ys.value='';if(fps)fps.value='';renderIngresos();
 }
 
 function renderIngresos(){
@@ -2090,12 +2211,16 @@ function renderIngresos(){
   }
   const selMonth=ms?parseInt(ms.value)||0:0;
   const selYear=ys?parseInt(ys.value)||0:0;
+  const selFP=(document.getElementById('i-filter-fp')||{}).value||'';
   let filtered=jobs.filter(j=>{
-    if(!selMonth&&!selYear)return true;
-    const d=j.start?new Date(j.start):(j.created?parseDate(j.created):null);
-    if(!d)return true;
-    if(selMonth&&d.getMonth()+1!==selMonth)return false;
-    if(selYear&&d.getFullYear()!==selYear)return false;
+    if(selMonth||selYear){
+      const d=j.start?new Date(j.start):(j.created?parseDate(j.created):null);
+      if(d){
+        if(selMonth&&d.getMonth()+1!==selMonth)return false;
+        if(selYear&&d.getFullYear()!==selYear)return false;
+      }
+    }
+    if(selFP && j.fp!==selFP)return false;
     return true;
   });
   const badge=document.getElementById('i-period-badge');
