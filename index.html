@@ -623,14 +623,21 @@ body{font-family:'Montserrat',sans-serif;background:var(--bg);color:var(--text);
         <label>Estado<select id="t-inp-col"><option value="pending">Pendiente</option><option value="progress">En progreso</option><option value="done">Terminado</option></select></label>
         <label style="justify-content:flex-end;"><button class="btn-add" onclick="addTCard()">+ Agregar</button></label>
       </div>
-      <!-- Personas asignadas -->
-      <div style="margin-top:8px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;background:#f8faff;border-radius:8px;padding:8px 12px;border:1px solid #e8eaf6;">
-        <span style="font-size:11px;font-weight:700;color:#1a2580;white-space:nowrap;">Personas asignadas:</span>
-        <div id="t-inp-personas-tags" style="display:flex;gap:5px;flex-wrap:wrap;flex:1;"></div>
-        <div style="display:flex;gap:6px;">
-          <input type="text" id="t-inp-persona-add" placeholder="Agregar persona..." style="font-size:11px;border:1px solid #dde1f0;border-radius:6px;padding:5px 10px;width:150px;font-family:inherit;" onkeydown="if(event.key==='Enter'){event.preventDefault();addPersonaTag('t-inp-persona-add','t-inp-personas-tags');}"/>
-          <button onclick="addPersonaTag('t-inp-persona-add','t-inp-personas-tags')" style="background:#1a2580;color:#fff;border:none;border-radius:6px;padding:5px 12px;font-size:11px;font-weight:700;cursor:pointer;">+</button>
+      <!-- Buscadores integrados en el formulario -->
+      <div style="margin-top:8px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;background:#f0f4ff;border-radius:8px;padding:10px 14px;border:1px solid #c5caee;">
+        <span style="font-size:11px;font-weight:800;color:#1a2580;white-space:nowrap;text-transform:uppercase;letter-spacing:.5px;">🔍 Buscar:</span>
+        <div style="display:flex;align-items:center;gap:6px;">
+          <span style="font-size:11px;font-weight:600;color:#4b5563;white-space:nowrap;">Trabajo:</span>
+          <input type="text" id="t-search-title" placeholder="Nombre del trabajo..." oninput="renderTrabajos()" style="font-size:12px;border:1.5px solid #c5caee;border-radius:7px;padding:6px 11px;font-family:inherit;color:#1a2580;background:#fff;width:190px;outline:none;" onfocus="this.style.borderColor='#2535a8'" onblur="this.style.borderColor='#c5caee'"/>
         </div>
+        <div style="display:flex;align-items:center;gap:6px;">
+          <span style="font-size:11px;font-weight:600;color:#4b5563;white-space:nowrap;">Cliente:</span>
+          <input type="text" id="t-search-client" placeholder="Nombre del cliente..." oninput="renderTrabajos()" style="font-size:12px;border:1.5px solid #c5caee;border-radius:7px;padding:6px 11px;font-family:inherit;color:#1a2580;background:#fff;width:190px;outline:none;" onfocus="this.style.borderColor='#2535a8'" onblur="this.style.borderColor='#c5caee'"/>
+        </div>
+        <button onclick="document.getElementById('t-search-title').value='';document.getElementById('t-search-client').value='';renderTrabajos();" style="font-size:11px;background:#fff;border:1.5px solid #c5caee;border-radius:7px;padding:6px 12px;cursor:pointer;color:#6b7280;font-family:inherit;font-weight:600;" title="Limpiar búsqueda">✕ Limpiar</button>
+        <!-- Tags de personas ocultos pero funcionales -->
+        <div id="t-inp-personas-tags" style="display:none;"></div>
+        <input type="text" id="t-inp-persona-add" style="display:none;"/>
       </div>
     </div>
     <div class="summary">
@@ -640,16 +647,7 @@ body{font-family:'Montserrat',sans-serif;background:var(--bg);color:var(--text);
     </div>
     <div class="export-bar" style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
       <button class="btn-export" onclick="exportExcelTrabajos()"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>Exportar Excel</button>
-      <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;flex:1;">
-        <!-- Búsqueda por nombre de trabajo -->
-        <span style="font-size:11px;font-weight:700;color:#1a2580;white-space:nowrap;">🔍 Buscar trabajo:</span>
-        <input type="text" id="t-search-title" placeholder="Nombre del trabajo..." oninput="renderTrabajos()" style="font-size:11px;border:1.5px solid #dde1f0;border-radius:7px;padding:5px 10px;font-family:inherit;color:#1a2580;background:#f8faff;width:160px;"/>
-        <!-- Búsqueda por cliente -->
-        <span style="font-size:11px;font-weight:700;color:#1a2580;white-space:nowrap;">👤 Buscar cliente:</span>
-        <input type="text" id="t-search-client" placeholder="Nombre del cliente..." oninput="renderTrabajos()" style="font-size:11px;border:1.5px solid #dde1f0;border-radius:7px;padding:5px 10px;font-family:inherit;color:#1a2580;background:#f8faff;width:160px;"/>
-        <button onclick="document.getElementById('t-search-title').value='';document.getElementById('t-search-client').value='';renderTrabajos();" style="font-size:10px;background:#f3f4f6;border:1px solid #dde1f0;border-radius:6px;padding:5px 8px;cursor:pointer;color:#6b7280;font-family:inherit;" title="Limpiar búsqueda">✕ Limpiar</button>
-      </div>
-      <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
+      <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-left:auto;">
         <span style="font-size:11px;font-weight:700;color:#1a2580;white-space:nowrap;">Filtrar por persona:</span>
         <select id="t-filter-persona" onchange="renderTrabajos()" style="font-size:11px;border:1.5px solid #dde1f0;border-radius:7px;padding:5px 10px;font-family:inherit;color:#1a2580;background:#f8faff;">
           <option value="">— Todas las personas —</option>
