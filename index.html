@@ -1445,8 +1445,9 @@ function checkTAlerts(){
 }
 
 function renderTSummary(filteredJobs){
+  const fFP=((document.getElementById('t-filter-fp')||{}).value||'');
   const v=filteredJobs.reduce((a,j)=>a+(parseFloat(j.valor)||0),0);
-  const ab=filteredJobs.reduce((a,j)=>a+(parseFloat(j.abono)||0),0);
+  const ab=filteredJobs.reduce((a,j)=>a+abonosPorFP(j,fFP).total,0);
   document.getElementById('t-sum-valor').textContent=fmtM(v);
   document.getElementById('t-sum-abono').textContent=fmtM(ab);
   document.getElementById('t-sum-saldo').textContent=fmtM(v-ab);
@@ -1475,7 +1476,7 @@ function renderTrabajos(){
     cont.innerHTML=list.map(j=>{
       const status=dateStatus(j.due,j.col);
       const v=parseFloat(j.valor)||0;
-      const ab=(j.abonos||[]).reduce((s,a)=>s+(parseFloat(a.monto)||0),0);
+      const ab=abonosPorFP(j,fFP).total;
       const sd=v-ab;
       const sdCls=sd<=0?'fin-val saldo-zero':'fin-val saldo-pos';
       const isDone=col==='done';
@@ -2657,13 +2658,17 @@ function renderIngresos(){
   const badge=document.getElementById('i-period-badge');
   if(badge)badge.textContent=filtered.length===jobs.length?'Todos los registros':filtered.length+' registros filtrados';
   // Summary
-  let totalValor=0,totalAbono=0;
+  let totalValor=0,totalAbono=0,totalSaldo=0;
   const selFPi=(document.getElementById('i-filter-fp')||{}).value||'';
-  filtered.forEach(j=>{totalValor+=parseFloat(j.valor)||0;totalAbono+=abonosPorFP(j,selFPi).total;});
+  filtered.forEach(j=>{
+    totalValor+=parseFloat(j.valor)||0;
+    totalAbono+=abonosPorFP(j,selFPi).total;
+    totalSaldo+=Math.max(0,(parseFloat(j.valor)||0)-abonosPorFP(j,'').total);
+  });
   const el_v=document.getElementById('i-sum-valor');const el_a=document.getElementById('i-sum-abono');const el_s=document.getElementById('i-sum-saldo');
   if(el_v)el_v.textContent=fmtM(totalValor);
   if(el_a)el_a.textContent=fmtM(totalAbono);
-  if(el_s)el_s.textContent=fmtM(totalValor-totalAbono);
+  if(el_s)el_s.textContent=fmtM(totalSaldo);
   // Table
   const tbody=document.getElementById('ingresos-tbody');
   if(!tbody)return;
@@ -2671,7 +2676,9 @@ function renderIngresos(){
   if(!filtered.length){tbody.innerHTML='<tr><td colspan="12" style="text-align:center;color:var(--text3);padding:2rem;">Sin registros</td></tr>';return;}
   tbody.innerHTML=filtered.map((j,i)=>{
     const v=parseFloat(j.valor)||0;
-    const r=abonosPorFP(j,selFPi);const sd=v-r.total;
+    const r=abonosPorFP(j,selFPi);
+    const totalAbonado=abonosPorFP(j,'').total; // saldo real siempre del total
+    const sd=v-totalAbonado;
     const sdColor=sd<=0?'color:var(--green);font-weight:700':'color:var(--red);font-weight:700';
     return`<tr>
       <td>${i+1}</td>
