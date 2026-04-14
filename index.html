@@ -915,6 +915,27 @@ body{font-family:'Montserrat',sans-serif;background:var(--bg);color:var(--text);
           <option value="trabajo">📋 Trabajos</option>
           <option value="egreso">💸 Egresos</option>
         </select>
+        <select id="audit-filter-dia" class="period-select" onchange="renderAuditoria()" style="min-width:80px;">
+          <option value="">— Día —</option>
+        </select>
+        <select id="audit-filter-mes" class="period-select" onchange="renderAuditoria()" style="min-width:120px;">
+          <option value="">— Mes —</option>
+          <option value="01">Enero</option>
+          <option value="02">Febrero</option>
+          <option value="03">Marzo</option>
+          <option value="04">Abril</option>
+          <option value="05">Mayo</option>
+          <option value="06">Junio</option>
+          <option value="07">Julio</option>
+          <option value="08">Agosto</option>
+          <option value="09">Septiembre</option>
+          <option value="10">Octubre</option>
+          <option value="11">Noviembre</option>
+          <option value="12">Diciembre</option>
+        </select>
+        <select id="audit-filter-año" class="period-select" onchange="renderAuditoria()" style="min-width:100px;">
+          <option value="">— Año —</option>
+        </select>
         <button class="btn-export" onclick="exportExcelAuditoria()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>Exportar</button>
       </div>
     </div>
@@ -2771,9 +2792,41 @@ function renderAuditoria(){
     ops.push({tipo:'egreso',desc:e.desc+' — '+(e.prov||'sin proveedor'),valor:parseFloat(e.valor)||0,estado:e.col,fecha:e.fecha||e.created,usuario:e.registradoPor||'—'});
   });
 
+  // Poblar filtro de años y días dinámicamente
+  const añoSelect=document.getElementById('audit-filter-año');
+  const diaSelect=document.getElementById('audit-filter-dia');
+  if(añoSelect&&añoSelect.options.length<=1){
+    const años=new Set();
+    ops.forEach(o=>{if(o.fecha){const m=o.fecha.match(/(\d{4})/);if(m)años.add(m[1]);}});
+    [...años].sort((a,b)=>b-a).forEach(y=>{const o=document.createElement('option');o.value=y;o.textContent=y;añoSelect.appendChild(o);});
+  }
+  if(diaSelect&&diaSelect.options.length<=1){
+    for(let d=1;d<=31;d++){const o=document.createElement('option');const ds=String(d).padStart(2,'0');o.value=ds;o.textContent=d;diaSelect.appendChild(o);}
+  }
+
+  const filtroDia=diaSelect?diaSelect.value:'';
+  const filtroMes=document.getElementById('audit-filter-mes')?document.getElementById('audit-filter-mes').value:'';
+  const filtroAño=añoSelect?añoSelect.value:'';
+
   // Filtrar
   if(filtroUser)ops=ops.filter(o=>o.usuario===filtroUser);
   if(filtroTipo)ops=ops.filter(o=>o.tipo===filtroTipo);
+  // Filtro por fecha: soporta formatos YYYY-MM-DD y DD/MM/YYYY
+  if(filtroDia||filtroMes||filtroAño){
+    ops=ops.filter(o=>{
+      if(!o.fecha)return false;
+      let año='',mes='',dia='';
+      const iso=o.fecha.match(/^(\d{4})-(\d{2})-(\d{2})/);
+      const dmy=o.fecha.match(/^(\d{2})\/(\d{2})\/(\d{4})/);
+      if(iso){año=iso[1];mes=iso[2];dia=iso[3];}
+      else if(dmy){dia=dmy[1];mes=dmy[2];año=dmy[3];}
+      else return false;
+      if(filtroDia&&dia!==filtroDia)return false;
+      if(filtroMes&&mes!==filtroMes)return false;
+      if(filtroAño&&año!==filtroAño)return false;
+      return true;
+    });
+  }
 
   // Métricas
   const el_t=document.getElementById('audit-total');
