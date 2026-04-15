@@ -811,13 +811,10 @@ body{font-family:'Montserrat',sans-serif;background:var(--bg);color:var(--text);
   <div id="tab-content-financiero" class="app-body" style="display:none;">
     <!-- PERIOD SELECTOR FINANCIERO -->
     <div class="period-bar">
-      <label>Corte mensual:</label>
-      <select class="period-select" id="f-period-month" onchange="loadFinanciero()">
-        <option value="">— Todos los meses —</option>
-      </select>
-      <select class="period-select" id="f-period-year" onchange="loadFinanciero()">
-        <option value="">— Todos los años —</option>
-      </select>
+      <label style="font-size:11px;font-weight:700;color:var(--text2);white-space:nowrap;">Desde:</label>
+      <input type="date" id="f-date-from" class="period-select" onchange="loadFinanciero()" style="min-width:140px;"/>
+      <label style="font-size:11px;font-weight:700;color:var(--text2);white-space:nowrap;">Hasta:</label>
+      <input type="date" id="f-date-to" class="period-select" onchange="loadFinanciero()" style="min-width:140px;"/>
       <label style="font-size:11px;font-weight:700;color:var(--text2);white-space:nowrap;">Forma de pago:</label>
       <select class="period-select" id="f-filter-fp" onchange="loadFinanciero()">
         <option value="">— Todas —</option>
@@ -1302,16 +1299,37 @@ function populatePeriodSelectors(){
 }
 
 function getPeriodFilter(prefix){
+  // Para arqueo (f) usamos rango de fechas; para otros prefijos, mes/año
+  if(prefix==='f'){
+    const from=document.getElementById('f-date-from')?.value||'';
+    const to=document.getElementById('f-date-to')?.value||'';
+    return{from,to,month:'',year:''};
+  }
   const month=document.getElementById(prefix+'-period-month')?.value||'';
   const year=document.getElementById(prefix+'-period-year')?.value||'';
-  return{month,year};
+  return{from:'',to:'',month,year};
+}
+
+// Convierte DD/MM/YYYY a YYYY-MM-DD para comparar
+function toISO(fecha){
+  if(!fecha)return'';
+  const p=fecha.split('/');
+  if(p.length===3)return p[2]+'-'+p[1]+'-'+p[0];
+  return fecha; // ya es ISO
 }
 
 function itemMatchesPeriod(item,prefix){
-  const{month,year}=getPeriodFilter(prefix);
-  if(!month&&!year)return true;
-  // Usar paidDate si existe, si no usar created
+  const{from,to,month,year}=getPeriodFilter(prefix);
   const fechaBase=item.paidDate||item.created||'';
+  if(prefix==='f'){
+    if(!from&&!to)return true;
+    const iso=toISO(fechaBase);
+    if(!iso)return true;
+    if(from&&iso<from)return false;
+    if(to&&iso>to)return false;
+    return true;
+  }
+  if(!month&&!year)return true;
   const parts=fechaBase.split('/');
   if(parts.length===3){
     const [d,m,y]=parts;
@@ -1325,7 +1343,13 @@ function itemMatchesPeriod(item,prefix){
 function updatePeriodBadge(prefix,count,total){
   const badge=document.getElementById(prefix+'-period-badge');
   if(!badge)return;
-  const{month,year}=getPeriodFilter(prefix);
+  const{from,to,month,year}=getPeriodFilter(prefix);
+  if(prefix==='f'){
+    if(!from&&!to){badge.textContent='Todos los registros ('+total+')';return;}
+    const fmtD=s=>s?s.split('-').reverse().join('/'):'?';
+    badge.textContent=(from?fmtD(from):'inicio')+' → '+(to?fmtD(to):'hoy')+' — '+count+' registro(s)';
+    return;
+  }
   if(!month&&!year){badge.textContent='Todos los registros ('+total+')';return;}
   const mLabel=month?MESES[parseInt(month)-1]:'';
   badge.textContent=(mLabel?mLabel+' ':'')+year+' — '+count+' registro(s)';
@@ -1346,9 +1370,10 @@ function clearEPeriod(){
   renderEgresos();
 }
 function clearFPeriod(){
-  const ms=document.getElementById('f-period-month');const ys=document.getElementById('f-period-year');
+  const fd=document.getElementById('f-date-from');
+  const ft=document.getElementById('f-date-to');
   const fps=document.getElementById('f-filter-fp');
-  if(ms)ms.value='';if(ys)ys.value='';if(fps)fps.value='';loadFinanciero();
+  if(fd)fd.value='';if(ft)ft.value='';if(fps)fps.value='';loadFinanciero();
 }
 
 // ============================================================
@@ -2189,8 +2214,9 @@ function renderFCategorias(fe){
 
 function exportExcelFinanciero(){
   const{fj,fe}=getFilteredData();
-  const{month,year}=getPeriodFilter('f');
-  const periodLabel=month&&year?MESES[parseInt(month)-1]+' '+year:year||'Todos los registros';
+  const{from,to}=getPeriodFilter('f');
+  const fmtD=s=>s?s.split('-').reverse().join('/'):'?';
+  const periodLabel=from||to?(from?fmtD(from):'inicio')+' al '+(to?fmtD(to):'hoy'):'Todos los registros';
   const wb=XLSX.utils.book_new();
   const fecha=todayStr();
   function sheet(title,headers,rows){
@@ -2205,7 +2231,7 @@ function exportExcelFinanciero(){
   XLSX.utils.book_append_sheet(wb,sheet('Resumen',['Concepto','Valor ($)'],[['Ingresos recibidos',ingresos],['Total facturado',facturado],['Egresos pagados',eP],['Utilidad neta',ingresos-eP],['Cuentas por cobrar',cobrar],['Cuentas por pagar',ePe]]),'Resumen');
   XLSX.utils.book_append_sheet(wb,sheet('Cuentas por Cobrar',['#','Trabajo','Cliente','F.Pago','Valor','Abonado','Saldo','F.Límite'],fj.filter(j=>(parseFloat(j.valor)||0)-(parseFloat(j.abono)||0)>0).map(j=>[j.num,j.title,j.client||'',j.fp||'',parseFloat(j.valor)||0,parseFloat(j.abono)||0,(parseFloat(j.valor)||0)-(parseFloat(j.abono)||0),fmt(j.due)])),'Ctas x Cobrar');
   XLSX.utils.book_append_sheet(wb,sheet('Cuentas por Pagar',['#','Concepto','Proveedor','Cat.','F.Pago','Valor','F.Límite'],fe.filter(e=>e.col==='pending').map(e=>[e.num,e.desc,e.prov||'',e.cat,e.fp||'',parseFloat(e.valor)||0,fmt(e.fecha)])),'Ctas x Pagar');
-  XLSX.writeFile(wb,'JNF_Arqueo_'+(month&&year?year+'_'+month.padStart(2,'0'):year||'todos')+'_'+new Date().toISOString().slice(0,10)+'.xlsx');
+  XLSX.writeFile(wb,'JNF_Arqueo_'+(from?from:'todos')+(to?'_al_'+to:'')+'_'+new Date().toISOString().slice(0,10)+'.xlsx');
 }
 
 // ============================================================
