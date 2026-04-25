@@ -1446,7 +1446,11 @@ async function deleteJob(id){
   try{
     const {db,doc,deleteDoc}=window._fb;
     await deleteDoc(doc(db,'trabajos_interno',id));
-  }catch(e){console.warn('[JNF] deleteJob:',e);}
+  }catch(e){
+    console.warn('[JNF] deleteJob:',e);
+    // Revertir: volver a cargar desde Firebase para restaurar el estado real
+    alert('❌ Error al eliminar el trabajo: ' + (e.message||e.code||e));
+  }
 }
 
 // ── Listener en tiempo real para trabajos ──
@@ -1690,7 +1694,9 @@ function askTDel(id,name){
 function closeTModal(){tPendingDelId=null;document.getElementById('t-modal-overlay').classList.remove('active');}
 function confirmTDel(){
   if(document.getElementById('t-modal-pwd').value!==DEL_PWD){document.getElementById('t-modal-error').textContent='Contraseña incorrecta.';document.getElementById('t-modal-pwd').value='';return;}
-  const dId=tPendingDelId; jobs=jobs.filter(x=>x.id!==dId); closeTModal(); deleteJob(dId);
+  const dId=tPendingDelId;
+  closeTModal();
+  deleteJob(dId);
 }
 
 function openTEditModal(id){
